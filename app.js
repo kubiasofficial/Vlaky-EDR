@@ -7,8 +7,7 @@ let allStations = [];
 let currentStation = null;
 let refreshInterval = null;
 let isFirstLoad = true;
-
-const EXCLUDED_STATIONS = ["Koluszki PZS R145", "Koluszki PZS R154"];
+let lastSearchTerm = "";
 
 async function fetchData(url) {
     try {
@@ -22,6 +21,17 @@ setInterval(() => {
     const el = document.getElementById('clock');
     if (el) el.innerText = new Date().toLocaleTimeString('cs-CZ');
 }, 1000);
+
+// VYHLEDÁVÁNÍ
+document.getElementById('global-search').addEventListener('input', (e) => {
+    lastSearchTerm = e.target.value.toLowerCase();
+    if (currentStation) {
+        updateBoardData(); // Filtruje vlaky v tabulce
+    } else {
+        const filtered = allStations.filter(st => st.Name.toLowerCase().includes(lastSearchTerm));
+        renderStations(filtered); // Filtruje mřížku stanic
+    }
+});
 
 document.getElementById('enter-dispatch').onclick = () => {
     document.getElementById('home-screen').classList.add('hidden');
@@ -52,6 +62,9 @@ function renderStations(stations) {
 async function openBoard(name) {
     currentStation = name;
     isFirstLoad = true;
+    document.getElementById('global-search').value = ""; // Reset hledání při vstupu
+    lastSearchTerm = "";
+    
     document.getElementById('stations-grid').classList.add('hidden');
     document.getElementById('station-view').classList.remove('hidden');
     document.getElementById('back-btn').classList.remove('hidden');
@@ -64,10 +77,8 @@ async function openBoard(name) {
 
 function getValidStation(timetable, currentIndex, direction) {
     let searchIndex = currentIndex + direction;
-    while (searchIndex >= 0 && searchIndex < timetable.length) {
-        const s = timetable[searchIndex];
-        if (!EXCLUDED_STATIONS.includes(s.nameForPerson)) return s.nameForPerson;
-        searchIndex += direction;
+    if (searchIndex >= 0 && searchIndex < timetable.length) {
+        return timetable[searchIndex].nameForPerson;
     }
     return direction === -1 ? "Výchozí" : "Konečná";
 }
@@ -81,19 +92,22 @@ async function updateBoardData() {
 
     if (!edr) return;
 
-    const filtered = edr.filter(t => t.timetable.some(s => s.nameForPerson === currentStation))
-        .sort((a,b) => {
-            const stopA = a.timetable.find(s => s.nameForPerson === currentStation);
-            const stopB = b.timetable.find(s => s.nameForPerson === currentStation);
-            return new Date(stopA.departureTime || stopA.arrivalTime) - new Date(stopB.departureTime || stopB.arrivalTime);
-        });
+    // Filtrování a řazení
+    const filtered = edr.filter(t => {
+        const hasStation = t.timetable.some(s => s.nameForPerson === currentStation);
+        const matchesSearch = t.trainName.toLowerCase().includes(lastSearchTerm) || 
+                              t.trainNoLocal.toString().includes(lastSearchTerm) ||
+                              t.endStation.toLowerCase().includes(lastSearchTerm);
+        return hasStation && matchesSearch;
+    }).sort((a,b) => {
+        const stopA = a.timetable.find(s => s.nameForPerson === currentStation);
+        const stopB = b.timetable.find(s => s.nameForPerson === currentStation);
+        return new Date(stopA.departureTime || stopA.arrivalTime) - new Date(stopB.departureTime || stopB.arrivalTime);
+    });
 
     filtered.forEach(item => {
         const stopIndex = item.timetable.findIndex(s => s.nameForPerson === currentStation);
         const stop = item.timetable[stopIndex];
-        
-        // --- LOGIKA ZPOŽDĚNÍ ---
-        // Hledáme shodu s mapou serveru CZ1
         const liveTrain = liveData?.data?.find(lt => lt.TrainNoLocal === item.trainNoLocal);
         const delay = liveTrain ? (liveTrain.TrainData?.Delay || 0) : 0;
         
@@ -129,7 +143,7 @@ async function updateBoardData() {
             </div>`;
     });
 
-    if (isFirstLoad) {
+    if (isFirstLoad && lastSearchTerm === "") {
         const firstActive = body.querySelector('.row-at-station, .row-arrival');
         if (firstActive) {
             firstActive.scrollIntoView({ behavior: 'smooth', block: 'center' });
