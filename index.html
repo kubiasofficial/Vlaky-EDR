@@ -3,17 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SimRail Dispečer 2026 | CZ1 Professional</title>
+    <title>SimRail CZ1 Professional</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div id="home-screen">
         <div class="overlay">
             <div class="welcome-box">
-                <h1>SimRail CZ1</h1>
+                <h1 style="font-size: 3rem; margin-bottom: 20px; color: white; text-shadow: 2px 2px 10px rgba(0,0,0,0.5);">SimRail CZ1</h1>
                 <div class="search-main">
                     <input type="text" id="station-search" placeholder="Hledat stanici (např. Koluszki)...">
-                    <div style="margin: 15px 0; color: #8a96a3;">— NEBO HLEDAT ČÍSLO VLAKU —</div>
+                    <div style="margin: 15px 0; color: #aaa;">— NEBO HLEDAT ČÍSLO VLAKU —</div>
                     <input type="text" id="train-global-search" placeholder="Zadejte číslo vlaku...">
                 </div>
                 <div id="global-train-result" class="hidden"></div>
@@ -25,20 +25,19 @@
     <div id="main-content" class="hidden">
         <div class="sticky-wrapper">
             <header class="main-header">
-                <button id="back-btn" class="glass-btn" onclick="location.reload()">← ZPĚT</button>
-                <div id="header-center">
-                    <h2 id="st-name">NÁZEV STANICE</h2>
-                </div>
+                <button class="glass-btn" onclick="location.reload()">← ZPĚT</button>
+                <h2 id="st-name">NÁZEV STANICE</h2>
                 <div id="clock">00:00:00</div>
             </header>
             <div id="table-header">
-                <div>Čas příj./odj.</div><div>Spoj</div><div>Odkud</div><div>Kam / Cíl</div><div>Nást./Kol.</div><div>Zpoždění</div><div>Stav</div>
+                <div>Čas</div><div>Spoj</div><div>Odkud</div><div>Cíl</div><div>Nást.</div><div>Zpoždění</div><div>Stav</div>
             </div>
         </div>
         <main id="station-view">
             <div id="departures-body"></div>
         </main>
     </div>
+
     <script src="app.js"></script>
 </body>
 </html>
