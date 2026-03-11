@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SimRail Dispečer 2026 | CZ1</title>
+    <title>SimRail Dispečer 2026 | CZ1 Professional</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -13,7 +13,7 @@
                 <h1>SimRail CZ1</h1>
                 <div class="search-main">
                     <input type="text" id="station-search" placeholder="Hledat stanici (např. Koluszki)...">
-                    <div style="margin: 15px 0; color: #8a96a3; font-size: 0.9rem;">— NEBO HLEDAT SPOJ —</div>
+                    <div class="search-divider">— NEBO HLEDAT ČÍSLO VLAKU —</div>
                     <input type="text" id="train-global-search" placeholder="Zadejte číslo vlaku (např. 14010)...">
                 </div>
                 <div id="global-train-result" class="hidden"></div>
@@ -23,22 +23,23 @@
     </div>
 
     <div id="main-content" class="hidden">
-        <header class="sticky-header">
-            <div class="main-header">
+        <div class="sticky-wrapper">
+            <header class="main-header">
                 <button id="back-btn" class="glass-btn">← ZPĚT</button>
                 <div id="header-center">
                     <h2 id="st-name">NÁZEV STANICE</h2>
+                    <input type="text" id="local-search" placeholder="Filtr vlaků v této stanici...">
                 </div>
                 <div class="header-tools">
                     <button id="view-toggle" class="glass-btn">TABULE</button>
                     <button id="announcement-btn" class="glass-btn">HLÁŠENÍ</button>
                 </div>
                 <div id="clock">00:00:00</div>
-            </div>
+            </header>
             <div id="table-header">
                 <div>Čas příj./odj.</div><div>Spoj</div><div>Odkud</div><div>Kam / Cíl</div><div>Nást./Kol.</div><div>Zpoždění</div><div>Stav</div>
             </div>
-        </header>
+        </div>
 
         <main id="station-view">
             <div id="departures-body"></div>
@@ -46,23 +47,9 @@
     </div>
 
     <div id="board-modal" class="modal hidden">
-        <div class="modal-content retro-modal">
+        <div class="modal-content">
             <span class="close" onclick="closeModal('board-modal')">&times;</span>
             <div id="modal-board-container"></div>
-        </div>
-    </div>
-
-    <div id="announcement-modal" class="modal hidden">
-        <div class="modal-content ann-modal">
-            <span class="close" onclick="closeModal('announcement-modal')">&times;</span>
-            <h2>STANIČNÍ ROZHLAS</h2>
-            <div class="ann-controls">
-                <button id="auto-ann-toggle" class="dispatch-btn">AUTOMATICKÉ HLÁŠENÍ: VYPNUTO</button>
-            </div>
-            <div class="ann-columns">
-                <div class="ann-col"><h3>PŘÍJEZDY</h3><div id="arrivals-queue"></div></div>
-                <div class="ann-col"><h3>ODJEZDY</h3><div id="departures-queue"></div></div>
-            </div>
         </div>
     </div>
 
