@@ -23,16 +23,36 @@ const elements = {
     homeScreen: document.getElementById("home-screen"),
     landingScreen: document.getElementById("landing-screen"),
     stationHub: document.getElementById("station-hub"),
+    trainHub: document.getElementById("train-hub"),
     enterStationsBtn: document.getElementById("enter-stations-btn"),
+    enterTrainsBtn: document.getElementById("enter-trains-btn"),
     hubBackBtn: document.getElementById("hub-back-btn"),
+    trainHubBackBtn: document.getElementById("train-hub-back-btn"),
     mainContent: document.getElementById("main-content"),
+    trainContent: document.getElementById("train-content"),
     stationsGrid: document.getElementById("stations-grid"),
+    trainsGrid: document.getElementById("trains-grid"),
     stationSearch: document.getElementById("station-search"),
+    trainHubSearch: document.getElementById("train-hub-search"),
     stationName: document.getElementById("st-name"),
     departuresBody: document.getElementById("departures-body"),
     backBtn: document.getElementById("back-btn"),
+    trainBackBtn: document.getElementById("train-back-btn"),
     viewToggle: document.getElementById("view-toggle"),
     clock: document.getElementById("clock"),
+    trainPanelClock: document.getElementById("train-panel-clock"),
+    trainPanelNumber: document.getElementById("train-panel-number"),
+    trainSideNumber: document.getElementById("train-side-number"),
+    trainOrigin: document.getElementById("train-origin"),
+    trainDestination: document.getElementById("train-destination"),
+    trainPreviousStop: document.getElementById("train-previous-stop"),
+    trainNextStop: document.getElementById("train-next-stop"),
+    trainPanelClass: document.getElementById("train-panel-class"),
+    trainPanelVehicle: document.getElementById("train-panel-vehicle"),
+    trainPanelDelay: document.getElementById("train-panel-delay"),
+    trainLiveBanner: document.getElementById("train-live-banner"),
+    trainLiveStation: document.getElementById("train-live-station"),
+    trainTimetableBody: document.getElementById("train-timetable-body"),
     boardModal: document.getElementById("board-modal"),
     closeBoard: document.getElementById("close-board"),
     boardContainer: document.getElementById("modal-board-container"),
@@ -55,11 +75,15 @@ let lastRenderedTrains = [];
 let lastLiveData = null;
 let lastStationRows = [];
 let lastPositionsData = null;
+let lastTrainHubItems = [];
+let currentTrainNo = null;
+let currentView = "landing";
 
 const uiState = {
     stationFilter: "all",
     trainQuery: "",
-    sortMode: "time"
+    sortMode: "time",
+    trainHubQuery: ""
 };
 
 const RETRO_MAX_ROWS = 8;
@@ -108,11 +132,19 @@ function fmt(dateValue) {
     return new Date(dateValue).toLocaleTimeString("cs-CZ", { hour: "2-digit", minute: "2-digit" });
 }
 
+function isTechnicalStopName(stopName) {
+    return ["PZS", "R145", "R154", "Glowice"].some((ignored) => String(stopName || "").includes(ignored));
+}
+
+function getRelevantTimetable(timetable) {
+    return (Array.isArray(timetable) ? timetable : []).filter((entry) => !isTechnicalStopName(entry?.nameForPerson));
+}
+
 function getCleanName(timetable, index, direction) {
     let currentIndex = index + direction;
     while (currentIndex >= 0 && currentIndex < timetable.length) {
         const stopName = timetable[currentIndex].nameForPerson;
-        if (!["PZS", "R145", "R154", "Glowice"].some((ignored) => stopName.includes(ignored))) {
+        if (!isTechnicalStopName(stopName)) {
             return stopName;
         }
         currentIndex += direction;
@@ -121,8 +153,12 @@ function getCleanName(timetable, index, direction) {
 }
 
 function setClock() {
+    const formatted = new Date().toLocaleTimeString("cs-CZ");
     if (elements.clock) {
-        elements.clock.textContent = new Date().toLocaleTimeString("cs-CZ");
+        elements.clock.textContent = formatted;
+    }
+    if (elements.trainPanelClock) {
+        elements.trainPanelClock.textContent = formatted;
     }
 }
 
@@ -414,12 +450,176 @@ function renderStationGrid(stations) {
         .join("");
 }
 
+function buildTrainHubItems(liveData) {
+    return (liveData?.data || [])
+        .map((liveTrain) => {
+            const edrTrain = cachedEDR.find((entry) => String(entry.trainNoLocal) === String(liveTrain.TrainNoLocal));
+            const relevantStops = getRelevantTimetable(edrTrain?.timetable || []);
+            const vehicles = parseVehicles(liveTrain.Vehicles);
+            const classCode = getTrainClassCode(liveTrain.TrainName);
+
+            return {
+                liveTrain,
+                edrTrain,
+                trainNoLocal: String(liveTrain.TrainNoLocal),
+                trainName: liveTrain.TrainName || edrTrain?.trainName || "Vlak",
+                classCode,
+                origin: relevantStops[0]?.nameForPerson || liveTrain.StartStation || "Výchozí",
+                destination: relevantStops[relevantStops.length - 1]?.nameForPerson || liveTrain.EndStation || "Cíl",
+                vehicles,
+                vehicleImage: getVehicleImagePath(vehicles) || getClassFallbackImage(classCode)
+            };
+        })
+        .sort((first, second) => {
+            const classCompare = first.classCode.localeCompare(second.classCode, "cs");
+            if (classCompare !== 0) return classCompare;
+            return first.trainNoLocal.localeCompare(second.trainNoLocal, "cs", { numeric: true });
+        });
+}
+
+function renderTrainGrid(items) {
+    if (!items.length) {
+        elements.trainsGrid.innerHTML = '<div class="empty-state">Na serveru CZ1 teď není dostupný žádný vlak.</div>';
+        return;
+    }
+
+    elements.trainsGrid.innerHTML = items
+        .map((item) => `
+            <button type="button" class="train-card" data-train-no="${escapeHtml(item.trainNoLocal)}">
+                <div class="train-card-orb-wrap">
+                    <span class="train-card-orb">
+                        <img src="${escapeHtml(item.vehicleImage)}" alt="${escapeHtml(item.trainName)}" onerror="this.onerror=null;this.src='grafika/eu07-005.png';">
+                    </span>
+                </div>
+                <div class="train-card-body">
+                    <div class="train-card-topline">
+                        <span class="train-class-badge ${escapeHtml(getTrainClassBadgeClass(item.classCode))}">${escapeHtml(item.classCode)}</span>
+                        <strong>${escapeHtml(item.trainName)} ${escapeHtml(item.trainNoLocal)}</strong>
+                    </div>
+                    <div class="train-card-route">${escapeHtml(item.origin)} <span>→</span> ${escapeHtml(item.destination)}</div>
+                    <div class="train-card-meta">${escapeHtml(item.vehicles.leadVehicle || item.classCode)}</div>
+                </div>
+            </button>
+        `)
+        .join("");
+}
+
+function getTrainContext(trainNoLocal, liveData, positionsData) {
+    const edrTrain = cachedEDR.find((entry) => String(entry.trainNoLocal) === String(trainNoLocal));
+    const liveTrain = liveData?.data?.find((entry) => String(entry.TrainNoLocal) === String(trainNoLocal));
+    const position = positionsData?.data?.find((entry) => entry.id === liveTrain?.id);
+    if (!edrTrain || !liveTrain) return null;
+
+    const currentIndex = liveTrain?.TrainData?.VDDelayedTimetableIndex ?? -1;
+    const relevantStops = getRelevantTimetable(edrTrain.timetable || []);
+    const currentStop = relevantStops.find((entry) => entry.indexOfPoint === currentIndex) || null;
+    const previousStop = [...relevantStops].reverse().find((entry) => entry.indexOfPoint < currentIndex) || relevantStops[0] || null;
+    const nextStop = relevantStops.find((entry) => entry.indexOfPoint > currentIndex) || relevantStops[relevantStops.length - 1] || null;
+    const origin = relevantStops[0] || null;
+    const destination = relevantStops[relevantStops.length - 1] || null;
+    const delayMinutes = computeTrainDelayMinutes(edrTrain, currentStop || nextStop || origin, currentIndex);
+    const vehicles = parseVehicles(liveTrain.Vehicles);
+    const classCode = getTrainClassCode(liveTrain.TrainName || edrTrain.trainName);
+    const currentSpeed = position ? Math.round(position.Velocity) : 0;
+    const isAtStation = Boolean(currentStop) && currentSpeed < 5;
+
+    return {
+        edrTrain,
+        liveTrain,
+        currentIndex,
+        relevantStops,
+        currentStop,
+        previousStop,
+        nextStop,
+        origin,
+        destination,
+        delayMinutes,
+        vehicles,
+        classCode,
+        currentSpeed,
+        isAtStation
+    };
+}
+
+function renderTrainPanel(trainContext) {
+    if (!trainContext) {
+        elements.trainTimetableBody.innerHTML = '<div class="empty-panel">Nepodařilo se najít data vlaku na CZ1.</div>';
+        return;
+    }
+
+    const {
+        edrTrain,
+        liveTrain,
+        currentIndex,
+        relevantStops,
+        currentStop,
+        previousStop,
+        nextStop,
+        origin,
+        destination,
+        delayMinutes,
+        vehicles,
+        classCode,
+        isAtStation
+    } = trainContext;
+
+    const trainNumberLabel = `${liveTrain.TrainName || edrTrain.trainName} ${liveTrain.TrainNoLocal}`;
+
+    elements.trainPanelNumber.textContent = trainNumberLabel;
+    elements.trainSideNumber.textContent = String(liveTrain.TrainNoLocal);
+    elements.trainOrigin.textContent = origin?.nameForPerson || "Výchozí stanice";
+    elements.trainDestination.textContent = destination?.nameForPerson || "Cílová stanice";
+    elements.trainPreviousStop.textContent = previousStop?.nameForPerson || "-";
+    elements.trainNextStop.textContent = nextStop?.nameForPerson || "-";
+    elements.trainPanelClass.textContent = classCode;
+    elements.trainPanelVehicle.textContent = vehicles.leadVehicle || "-";
+    elements.trainPanelDelay.textContent = `+${delayMinutes} min`;
+
+    if (isAtStation && currentStop) {
+        elements.trainLiveStation.textContent = currentStop.nameForPerson;
+        elements.trainLiveBanner.classList.remove("hidden");
+    } else {
+        elements.trainLiveBanner.classList.add("hidden");
+    }
+
+    elements.trainTimetableBody.innerHTML = relevantStops
+        .map((stop) => {
+            let status = "Další";
+            let rowClass = "train-tt-future";
+
+            if (stop.indexOfPoint < currentIndex) {
+                status = "Projelo";
+                rowClass = "train-tt-past";
+            }
+
+            if (stop.indexOfPoint === currentIndex) {
+                status = isAtStation ? "Ve stanici" : "Na trase";
+                rowClass = "train-tt-current";
+            }
+
+            if (nextStop && stop.indexOfPoint === nextStop.indexOfPoint) {
+                status = "Následující";
+                rowClass = rowClass === "train-tt-current" ? rowClass : "train-tt-next";
+            }
+
+            return `
+                <div class="train-timetable-row ${rowClass}">
+                    <div>${fmt(stop.arrivalTime)}<br><span>${fmt(stop.departureTime)}</span></div>
+                    <div><strong>${escapeHtml(stop.nameForPerson)}</strong></div>
+                    <div>${escapeHtml(stop.platform || "-")}/${escapeHtml(stop.track || "-")}</div>
+                    <div>${status}</div>
+                </div>
+            `;
+        })
+        .join("");
+}
+
 function updateKpis(rows) {
     const activeCount = rows.length;
 
     const stationCount = rows.filter((row) => row.currentIndex === row.stop.indexOfPoint).length;
 
-    const maxDelay = rows.reduce((maximum, row) => Math.max(maximum, row.live?.TrainData?.Delay || 0), 0);
+    const maxDelay = rows.reduce((maximum, row) => Math.max(maximum, row.delayMinutes || 0), 0);
 
     elements.kpiActive.textContent = String(activeCount);
     elements.kpiStation.textContent = String(stationCount);
@@ -601,29 +801,75 @@ function toggleTrain(id) {
 
 function goHome() {
     currentStation = null;
+    currentTrainNo = null;
+    currentView = "station-hub";
     activeRequestId += 1;
     isFirstLoad = true;
     expandedTrains.clear();
     clearTimeout(refreshTimer);
     elements.mainContent.classList.add("hidden");
+    elements.trainContent.classList.add("hidden");
     elements.homeScreen.classList.remove("hidden");
     elements.landingScreen.classList.add("hidden");
     elements.stationHub.classList.remove("hidden");
+    elements.trainHub.classList.add("hidden");
     elements.departuresBody.innerHTML = "";
     elements.boardModal.classList.add("hidden");
 }
 
 function openStationHub() {
+    currentView = "station-hub";
     elements.landingScreen.classList.add("hidden");
+    elements.trainHub.classList.add("hidden");
     elements.stationHub.classList.remove("hidden");
     elements.stationSearch.focus();
 }
 
-function backToLanding() {
+async function openTrainHub() {
+    currentView = "train-hub";
+    currentStation = null;
+    currentTrainNo = null;
+    uiState.trainHubQuery = "";
+    clearTimeout(refreshTimer);
+    elements.landingScreen.classList.add("hidden");
     elements.stationHub.classList.add("hidden");
+    elements.mainContent.classList.add("hidden");
+    elements.trainContent.classList.add("hidden");
+    elements.homeScreen.classList.remove("hidden");
+    elements.trainHub.classList.remove("hidden");
+    elements.trainHubSearch.value = "";
+    elements.trainHubSearch.focus();
+
+    showLoading();
+    const liveData = await fetchData(API_TRAINS);
+    hideLoading();
+
+    lastTrainHubItems = buildTrainHubItems(liveData);
+    renderTrainGrid(lastTrainHubItems);
+}
+
+function backToLanding() {
+    currentView = "landing";
+    currentTrainNo = null;
+    currentStation = null;
+    clearTimeout(refreshTimer);
+    elements.stationHub.classList.add("hidden");
+    elements.trainHub.classList.add("hidden");
+    elements.mainContent.classList.add("hidden");
+    elements.trainContent.classList.add("hidden");
     elements.landingScreen.classList.remove("hidden");
     elements.stationSearch.value = "";
+    elements.trainHubSearch.value = "";
     renderStationGrid(allStations);
+}
+
+function backToTrainHub() {
+    currentTrainNo = null;
+    currentView = "train-hub";
+    clearTimeout(refreshTimer);
+    elements.trainContent.classList.add("hidden");
+    elements.homeScreen.classList.remove("hidden");
+    elements.trainHub.classList.remove("hidden");
 }
 
 async function updateLoop() {
@@ -646,19 +892,57 @@ async function updateLoop() {
     refreshTimer = setTimeout(updateLoop, 15000);
 }
 
+async function updateTrainLoop() {
+    if (!currentTrainNo) return;
+    clearTimeout(refreshTimer);
+    const requestId = ++activeRequestId;
+    showLoading();
+    const [liveData, positionsData] = await Promise.all([fetchData(API_TRAINS), fetchData(API_POSITIONS)]);
+    hideLoading();
+
+    if (requestId !== activeRequestId || !currentTrainNo) return;
+
+    if (!liveData || !positionsData) {
+        elements.trainTimetableBody.innerHTML = `<div class="empty-panel error-panel">Nepodařilo se načíst data vlaku.${getApiHint()}</div>`;
+        refreshTimer = setTimeout(updateTrainLoop, 15000);
+        return;
+    }
+
+    const trainContext = getTrainContext(currentTrainNo, liveData, positionsData);
+    renderTrainPanel(trainContext);
+    refreshTimer = setTimeout(updateTrainLoop, 15000);
+}
+
 async function openBoard(stationName) {
     currentStation = stationName;
+    currentTrainNo = null;
+    currentView = "station-view";
     isFirstLoad = true;
     resetTableControls();
     elements.stationName.textContent = stationName.toUpperCase();
     elements.homeScreen.classList.add("hidden");
+    elements.trainContent.classList.add("hidden");
     elements.mainContent.classList.remove("hidden");
     await updateLoop();
 }
 
+async function openTrainPanel(trainNoLocal) {
+    currentTrainNo = String(trainNoLocal);
+    currentStation = null;
+    currentView = "train-view";
+    activeRequestId += 1;
+    clearTimeout(refreshTimer);
+    elements.homeScreen.classList.add("hidden");
+    elements.mainContent.classList.add("hidden");
+    elements.trainContent.classList.remove("hidden");
+    await updateTrainLoop();
+}
+
 function bindEvents() {
     elements.enterStationsBtn.addEventListener("click", openStationHub);
+    elements.enterTrainsBtn.addEventListener("click", openTrainHub);
     elements.hubBackBtn.addEventListener("click", backToLanding);
+    elements.trainHubBackBtn.addEventListener("click", backToLanding);
 
     elements.filterChips.forEach((chip) => {
         chip.addEventListener("click", () => {
@@ -684,9 +968,21 @@ function bindEvents() {
         renderStationGrid(filtered);
     });
 
+    elements.trainHubSearch.addEventListener("input", (event) => {
+        uiState.trainHubQuery = event.target.value || "";
+        const query = norm(uiState.trainHubQuery);
+        const filtered = lastTrainHubItems.filter((item) => norm(`${item.trainName} ${item.trainNoLocal} ${item.origin} ${item.destination}`).includes(query));
+        renderTrainGrid(filtered);
+    });
+
     elements.stationsGrid.addEventListener("click", (event) => {
         const stationButton = event.target.closest("[data-station]");
         if (stationButton) openBoard(stationButton.dataset.station);
+    });
+
+    elements.trainsGrid.addEventListener("click", (event) => {
+        const trainButton = event.target.closest("[data-train-no]");
+        if (trainButton) openTrainPanel(trainButton.dataset.trainNo);
     });
 
     elements.departuresBody.addEventListener("click", (event) => {
@@ -695,6 +991,7 @@ function bindEvents() {
     });
 
     elements.backBtn.addEventListener("click", goHome);
+    elements.trainBackBtn.addEventListener("click", backToTrainHub);
     elements.viewToggle.addEventListener("click", () => {
         renderRetroBoard();
         elements.boardModal.classList.remove("hidden");

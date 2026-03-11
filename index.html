@@ -21,6 +21,7 @@
                     </div>
                     <div class="landing-actions">
                         <button class="hero-enter-btn" id="enter-stations-btn">Do stanice</button>
+                        <button class="hero-enter-btn hero-alt-btn" id="enter-trains-btn">Do vlaku</button>
                     </div>
                 </section>
 
@@ -36,6 +37,20 @@
                     </div>
                     <div class="station-hint">Stanice se zobrazí až po kliknutí na „Do stanice“.</div>
                     <div id="stations-grid" class="grid-container"></div>
+                </section>
+
+                <section class="welcome-box hidden" id="train-hub">
+                    <div class="hub-topbar">
+                        <button class="glass-btn hub-back-btn" id="train-hub-back-btn">← Hlavní stránka</button>
+                    </div>
+                    <div class="eyebrow">VÝBĚR VLAKU</div>
+                    <h2 class="glow-text">Seznam vlaků CZ1</h2>
+                    <p class="hero-copy">Vyber aktivní vlak na serveru CZ1 a otevři jeho provozní panel s jízdním řádem a aktuální polohou.</p>
+                    <div class="search-main">
+                        <input type="text" id="train-hub-search" placeholder="Hledat číslo nebo název vlaku..." autocomplete="off">
+                    </div>
+                    <div class="station-hint">Seznam je živě načítaný ze serveru CZ1.</div>
+                    <div id="trains-grid" class="train-grid"></div>
                 </section>
             </div>
         </div>
@@ -92,6 +107,66 @@
             <main id="station-view">
                 <div id="departures-body"></div>
             </main>
+        </div>
+
+        <div id="train-content" class="hidden">
+            <div class="train-panel-shell">
+                <header class="train-panel-topbar">
+                    <button class="glass-btn back-btn" id="train-back-btn">← Zpět na seznam vlaků</button>
+                    <div class="train-panel-header-box" id="train-panel-server">CZ1</div>
+                    <div class="train-panel-header-box" id="train-panel-number">00000</div>
+                    <div class="train-panel-header-box train-panel-clock-box" id="train-panel-clock">00:00:00</div>
+                </header>
+
+                <section class="train-monitor-grid">
+                    <div class="train-side-card">
+                        <div class="train-side-label">Číslo vlaku</div>
+                        <div class="train-side-number" id="train-side-number">00000</div>
+                    </div>
+
+                    <div class="train-route-card">
+                        <div class="route-endpoint route-endpoint-top" id="train-origin">Výchozí stanice</div>
+                        <div class="route-middle-boxes">
+                            <div class="route-middle-card">
+                                <div class="route-middle-label">Předchozí stanice</div>
+                                <div class="route-middle-name" id="train-previous-stop">-</div>
+                            </div>
+                            <div class="route-middle-card route-middle-card-next">
+                                <div class="route-middle-label">Následující stanice</div>
+                                <div class="route-middle-name" id="train-next-stop">-</div>
+                            </div>
+                        </div>
+                        <div class="route-endpoint route-endpoint-bottom" id="train-destination">Cílová stanice</div>
+                    </div>
+
+                    <div class="train-side-tools">
+                        <div class="train-side-mini-card">
+                            <div class="train-side-label">Třída</div>
+                            <div class="train-side-value" id="train-panel-class">-</div>
+                        </div>
+                        <div class="train-side-mini-card">
+                            <div class="train-side-label">Lok/Jednotka</div>
+                            <div class="train-side-value" id="train-panel-vehicle">-</div>
+                        </div>
+                        <div class="train-side-mini-card">
+                            <div class="train-side-label">Zpoždění</div>
+                            <div class="train-side-value" id="train-panel-delay">+0 min</div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="train-live-banner hidden" id="train-live-banner">
+                    <div class="train-live-station" id="train-live-station">Aktuální stanice</div>
+                    <div class="train-live-logo">ICCC</div>
+                </section>
+
+                <section class="train-timetable-panel">
+                    <div class="train-timetable-head">
+                        <div>Čas</div><div>Stanice</div><div>Nást.</div><div>Stav</div>
+                    </div>
+                    <div id="train-timetable-body" class="train-timetable-body"></div>
+                </section>
+            </div>
         </div>
 
         <div id="board-modal" class="modal hidden">

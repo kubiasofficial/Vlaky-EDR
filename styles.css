@@ -135,6 +135,9 @@ body::before {
 
 .landing-actions {
     margin-top: 26px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
 }
 
 .hero-enter-btn {
@@ -155,6 +158,12 @@ body::before {
 .hero-enter-btn:hover {
     transform: translateY(-2px);
     box-shadow: 0 16px 26px rgba(10, 31, 59, 0.5);
+}
+
+.hero-alt-btn {
+    color: #e8f3ff;
+    border: 1px solid rgba(215, 234, 255, 0.44);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.2), rgba(174, 208, 255, 0.08));
 }
 
 .eyebrow {
@@ -225,6 +234,91 @@ body::before {
     max-height: 48vh;
     overflow: auto;
     padding-right: 2px;
+}
+
+.train-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 18px;
+    margin-top: 18px;
+    max-height: 52vh;
+    overflow: auto;
+    padding-right: 2px;
+}
+
+.train-card {
+    position: relative;
+    overflow: hidden;
+    display: grid;
+    gap: 14px;
+    padding: 18px;
+    border-radius: 24px;
+    border: 1px solid rgba(182, 214, 247, 0.3);
+    background: linear-gradient(180deg, rgba(10, 46, 89, 0.92), rgba(5, 27, 55, 0.96));
+    color: #eef6ff;
+    text-align: left;
+    cursor: pointer;
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.22);
+}
+
+.train-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(255, 255, 255, 0.7);
+}
+
+.train-card-orb-wrap {
+    display: flex;
+    justify-content: center;
+}
+
+.train-card-orb {
+    width: 102px;
+    height: 102px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 3px solid rgba(226, 239, 255, 0.6);
+    box-shadow: 0 14px 30px rgba(0, 0, 0, 0.26);
+}
+
+.train-card-orb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.train-card-body {
+    display: grid;
+    gap: 8px;
+}
+
+.train-card-topline {
+    display: grid;
+    gap: 8px;
+    justify-items: start;
+}
+
+.train-card-topline strong {
+    font-family: "Oswald", "Segoe UI", sans-serif;
+    font-size: 1.35rem;
+    line-height: 1;
+}
+
+.train-card-route {
+    color: #ffe066;
+    font-size: 1rem;
+    line-height: 1.2;
+}
+
+.train-card-route span {
+    color: #f2f8ff;
+    margin: 0 6px;
+}
+
+.train-card-meta {
+    color: #bdd5ef;
+    font-size: 0.86rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
 }
 
 .st-card {
@@ -306,6 +400,247 @@ body::before {
 
 #main-content {
     padding: 24px;
+}
+
+#train-content {
+    min-height: 100vh;
+    padding: 24px;
+}
+
+.train-panel-shell {
+    display: grid;
+    gap: 18px;
+}
+
+.train-panel-topbar {
+    display: grid;
+    grid-template-columns: auto 160px 180px 180px;
+    gap: 12px;
+    align-items: center;
+}
+
+.train-panel-header-box {
+    min-height: 58px;
+    display: grid;
+    place-items: center;
+    padding: 10px 14px;
+    border-radius: 14px;
+    border: 1px solid rgba(185, 215, 250, 0.38);
+    background: rgba(13, 32, 59, 0.88);
+    color: #ffe249;
+    font-family: "Oswald", "Segoe UI", sans-serif;
+    font-size: 1.3rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.train-panel-clock-box {
+    font-size: 2rem;
+}
+
+.train-monitor-grid {
+    display: grid;
+    grid-template-columns: 180px 1fr 220px;
+    gap: 18px;
+    align-items: stretch;
+}
+
+.train-side-card,
+.train-side-mini-card,
+.train-route-card,
+.train-timetable-panel {
+    border-radius: 20px;
+    border: 1px solid rgba(189, 221, 255, 0.32);
+    background: linear-gradient(180deg, rgba(11, 36, 72, 0.88), rgba(4, 20, 43, 0.95));
+    box-shadow: 0 18px 42px rgba(0, 0, 0, 0.18);
+}
+
+.train-side-card {
+    padding: 22px 18px;
+    display: grid;
+    align-content: center;
+    gap: 10px;
+}
+
+.train-side-label {
+    color: #ffd95c;
+    font-size: 0.78rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.train-side-number {
+    font-family: "Oswald", "Segoe UI", sans-serif;
+    font-size: clamp(2.4rem, 6vw, 3.7rem);
+    line-height: 0.9;
+    color: #ffe249;
+}
+
+.train-route-card {
+    position: relative;
+    padding: 24px 28px;
+    display: grid;
+    gap: 18px;
+}
+
+.route-endpoint {
+    display: inline-flex;
+    width: fit-content;
+    max-width: 100%;
+    padding: 4px 12px;
+    border-radius: 10px;
+    background: #0a2a7a;
+    color: #f7fbff;
+    font-family: "Oswald", "Segoe UI", sans-serif;
+    font-size: clamp(1.3rem, 3vw, 2.2rem);
+    line-height: 1.05;
+}
+
+.route-endpoint-bottom {
+    justify-self: start;
+}
+
+.route-middle-boxes {
+    display: grid;
+    gap: 14px;
+    position: relative;
+    padding-left: 24px;
+}
+
+.route-middle-boxes::before {
+    content: "";
+    position: absolute;
+    left: 6px;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    border-radius: 999px;
+    background: linear-gradient(180deg, #f0a738, #ffd75a);
+}
+
+.route-middle-card {
+    position: relative;
+    display: grid;
+    gap: 4px;
+}
+
+.route-middle-card::before {
+    content: "";
+    position: absolute;
+    left: -27px;
+    top: 10px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #e9a53e;
+    box-shadow: 0 0 0 4px rgba(233, 165, 62, 0.2);
+}
+
+.route-middle-label {
+    color: #e9b44e;
+    font-size: 0.78rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.route-middle-name {
+    font-family: "Oswald", "Segoe UI", sans-serif;
+    font-size: clamp(1.15rem, 2.5vw, 1.8rem);
+    color: #fff2b8;
+}
+
+.train-side-tools {
+    display: grid;
+    gap: 12px;
+}
+
+.train-side-mini-card {
+    padding: 14px 16px;
+    display: grid;
+    gap: 8px;
+}
+
+.train-side-value {
+    font-family: "Oswald", "Segoe UI", sans-serif;
+    font-size: 1.4rem;
+    color: #eff7ff;
+}
+
+.train-live-banner {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 12px;
+    align-items: center;
+    padding: 22px 28px;
+    border-radius: 22px;
+    background: linear-gradient(90deg, rgba(4, 16, 111, 0.98), rgba(8, 58, 176, 0.96));
+    border: 1px solid rgba(174, 214, 255, 0.42);
+    animation: icccPulse 1.15s infinite;
+}
+
+.train-live-station {
+    font-family: "Barlow Condensed", "Segoe UI", sans-serif;
+    font-size: clamp(3rem, 8vw, 5.4rem);
+    line-height: 0.9;
+    color: #f5f8ff;
+}
+
+.train-live-logo {
+    font-family: "Oswald", "Segoe UI", sans-serif;
+    font-size: clamp(2.4rem, 5vw, 4rem);
+    color: #ff7a22;
+    letter-spacing: 0.04em;
+    text-shadow: 2px 2px 0 rgba(8, 26, 72, 0.95);
+}
+
+.train-timetable-panel {
+    padding: 18px;
+}
+
+.train-timetable-head,
+.train-timetable-row {
+    display: grid;
+    grid-template-columns: 0.85fr 2.2fr 0.8fr 0.9fr;
+    gap: 12px;
+}
+
+.train-timetable-head {
+    padding: 0 10px 10px;
+    color: #c6dbf4;
+    font-size: 0.78rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.train-timetable-body {
+    display: grid;
+    gap: 8px;
+}
+
+.train-timetable-row {
+    padding: 12px 10px;
+    border-radius: 12px;
+    border: 1px solid rgba(184, 216, 250, 0.16);
+    background: rgba(255, 255, 255, 0.04);
+    color: #eef5ff;
+}
+
+.train-timetable-row span {
+    color: #97bbeb;
+}
+
+.train-tt-past {
+    opacity: 0.72;
+}
+
+.train-tt-current {
+    border-color: rgba(118, 191, 255, 0.7);
+    background: linear-gradient(90deg, rgba(19, 76, 196, 0.55), rgba(5, 33, 91, 0.9));
+}
+
+.train-tt-next {
+    border-color: rgba(243, 205, 86, 0.42);
+    background: rgba(243, 205, 86, 0.1);
 }
 
 .sticky-wrapper {
@@ -933,6 +1268,16 @@ body::before {
     }
 }
 
+@keyframes icccPulse {
+    0%,
+    100% {
+        box-shadow: 0 0 0 1px rgba(82, 160, 255, 0.18), 0 0 18px rgba(45, 124, 255, 0.18);
+    }
+    50% {
+        box-shadow: 0 0 0 1px rgba(112, 184, 255, 0.58), 0 0 36px rgba(50, 124, 255, 0.34);
+    }
+}
+
 @media (max-width: 1080px) {
     .main-header {
         grid-template-columns: 1fr;
@@ -947,6 +1292,11 @@ body::before {
     }
 
     .table-controls {
+        grid-template-columns: 1fr;
+    }
+
+    .train-panel-topbar,
+    .train-monitor-grid {
         grid-template-columns: 1fr;
     }
 
@@ -973,7 +1323,8 @@ body::before {
 
 @media (max-width: 760px) {
     .overlay,
-    #main-content {
+    #main-content,
+    #train-content {
         padding: 14px;
     }
 
@@ -1023,6 +1374,22 @@ body::before {
         grid-template-columns: 1fr 1fr;
         gap: 8px;
         font-size: 0.9rem;
+    }
+
+    .train-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .train-timetable-head {
+        display: none;
+    }
+
+    .train-timetable-row {
+        grid-template-columns: 1fr;
+    }
+
+    .train-live-banner {
+        grid-template-columns: 1fr;
     }
 
     .retro-board-topline,
