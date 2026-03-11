@@ -295,6 +295,21 @@ function computeTrainDelayMinutes(train, stop, currentIndex) {
             const historicalDelay = getPointDelayMinutes(entry);
             if (historicalDelay !== null) return historicalDelay;
         }
+
+        const currentPointFallback = train.timetable.find((entry) => entry.indexOfPoint === currentIndex);
+        const plannedNowRaw = currentPointFallback?.departureTime || currentPointFallback?.arrivalTime;
+        const plannedNowMs = plannedNowRaw ? new Date(plannedNowRaw).getTime() : NaN;
+        if (Number.isFinite(plannedNowMs)) {
+            const lagMinutes = Math.round((Date.now() - plannedNowMs) / 60000);
+            if (lagMinutes > 0) return Math.min(lagMinutes, 180);
+        }
+    }
+
+    const plannedStopRaw = stop?.departureTime || stop?.arrivalTime;
+    const plannedStopMs = plannedStopRaw ? new Date(plannedStopRaw).getTime() : NaN;
+    if (Number.isFinite(plannedStopMs)) {
+        const lagAtStop = Math.round((Date.now() - plannedStopMs) / 60000);
+        if (lagAtStop > 0 && currentIndex <= stop.indexOfPoint) return Math.min(lagAtStop, 180);
     }
 
     return 0;
@@ -321,8 +336,9 @@ function collectStationRows(liveData) {
             const live = liveData?.data?.find((entry) => entry.TrainNoLocal === train.trainNoLocal);
             const currentIndex = live?.TrainData?.VDDelayedTimetableIndex ?? -1;
             const plannedTime = getStopPlanDate(stop).getTime();
+            const delayMinutes = computeTrainDelayMinutes(train, stop, currentIndex);
 
-            return { train, stop, live, currentIndex, plannedTime };
+            return { train, stop, live, currentIndex, plannedTime, delayMinutes };
         })
         .filter(Boolean)
         .sort((first, second) => {
