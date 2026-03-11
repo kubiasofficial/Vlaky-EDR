@@ -425,7 +425,7 @@ body::before {
 #table-header,
 .train-row {
     display: grid;
-    grid-template-columns: 1.05fr 0.62fr 1.1fr 1.2fr 1.3fr 0.85fr 0.9fr 0.95fr;
+    grid-template-columns: 1.05fr 1.1fr 0.72fr 1.2fr 1.3fr 0.85fr 0.9fr 0.95fr;
     gap: 10px;
 }
 
@@ -473,8 +473,10 @@ body::before {
 
 .vehicle-cell {
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
+    gap: 6px;
 }
 
 .vehicle-orb {
@@ -501,6 +503,14 @@ body::before {
     font-size: 0.72rem;
     letter-spacing: 0.07em;
     font-weight: 700;
+}
+
+.vehicle-caption {
+    color: #d4e6fb;
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    font-weight: 700;
+    text-transform: uppercase;
 }
 
 .train-cell b {

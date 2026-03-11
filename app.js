@@ -430,17 +430,18 @@ function renderTable(liveData, posData) {
         return `
             <div class="train-row ${rowClass}" data-train-id="${escapeHtml(item.trainNoLocal)}">
                 <div class="cell" data-label="Čas">${fmt(stop.arrivalTime)}<br><span class="cell-accent">${fmt(stop.departureTime)}</span></div>
+                <div class="cell train-cell" data-label="Vlak">
+                    <span class="train-class-badge ${classBadgeClass}">${escapeHtml(classCode)}</span>
+                    <b>${escapeHtml(item.trainName)} ${escapeHtml(item.trainNoLocal)}</b>
+                    ${vehicles.leadVehicle ? `<span class="vehicle-inline">Lok/Jednotka: ${escapeHtml(vehicles.leadVehicle)}</span>` : ""}
+                </div>
                 <div class="cell vehicle-cell" data-label="Vozidlo">
                     <span class="vehicle-orb ${vehicleImagePath ? "has-image" : "no-image"}">
                         ${vehicleImagePath
                             ? `<img src="${escapeHtml(vehicleImagePath)}" alt="${escapeHtml(vehicleCodeLabel)}">`
                             : `<span>${escapeHtml(vehicleCodeLabel)}</span>`}
                     </span>
-                </div>
-                <div class="cell train-cell" data-label="Spoj">
-                    <span class="train-class-badge ${classBadgeClass}">${escapeHtml(classCode)}</span>
-                    <b>${escapeHtml(item.trainName)} ${escapeHtml(item.trainNoLocal)}</b>
-                    ${vehicles.leadVehicle ? `<span class="vehicle-inline">Lok/Jednotka: ${escapeHtml(vehicles.leadVehicle)}</span>` : ""}
+                    <span class="vehicle-caption">${escapeHtml(classCode)} ${escapeHtml(String(item.trainNoLocal || ""))}</span>
                 </div>
                 <div class="cell" data-label="Odkud">${escapeHtml(originStation)}</div>
                 <div class="cell" data-label="Kam pojede"><b>${escapeHtml(nextStation || "-")}</b></div>
