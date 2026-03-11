@@ -410,7 +410,7 @@ function collectStationRows(liveData) {
             const stop = train.timetable.find((entry) => norm(entry.nameForPerson).includes(target));
             if (!stop) return null;
 
-            const live = liveData?.data?.find((entry) => entry.TrainNoLocal === train.trainNoLocal);
+            const live = liveData?.data?.find((entry) => String(entry.TrainNoLocal) === String(train.trainNoLocal));
             const currentIndex = live?.TrainData?.VDDelayedTimetableIndex ?? -1;
             const plannedTime = getStopPlanDate(stop).getTime();
             const delayMinutes = computeTrainDelayMinutes(train, stop, currentIndex);
