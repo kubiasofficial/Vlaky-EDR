@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SimRail CZ1 Professional</title>
+    <title>SimRail Dispečer 2026 | CZ1 Professional</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -25,8 +25,14 @@
     <div id="main-content" class="hidden">
         <div class="sticky-wrapper">
             <header class="main-header">
-                <button class="glass-btn" onclick="location.reload()">← ZPĚT</button>
-                <h2 id="st-name">NÁZEV STANICE</h2>
+                <button class="glass-btn" id="back-btn">← ZPĚT</button>
+                <div id="header-center">
+                    <h2 id="st-name">NÁZEV STANICE</h2>
+                </div>
+                <div class="header-tools">
+                    <button id="view-toggle" class="glass-btn">TABULE</button>
+                    <button id="announcement-btn" class="glass-btn">HLÁŠENÍ</button>
+                </div>
                 <div id="clock">00:00:00</div>
             </header>
             <div id="table-header">
@@ -36,6 +42,27 @@
         <main id="station-view">
             <div id="departures-body"></div>
         </main>
+    </div>
+
+    <div id="board-modal" class="modal hidden">
+        <div class="modal-content retro-modal">
+            <span class="close" id="close-board">&times;</span>
+            <div id="modal-board-container"></div>
+        </div>
+    </div>
+
+    <div id="announcement-modal" class="modal hidden">
+        <div class="modal-content ann-modal">
+            <span class="close" id="close-ann">&times;</span>
+            <h2 style="color: var(--accent-green);">STANIČNÍ ROZHLAS</h2>
+            <div class="ann-controls" style="text-align: center; margin-bottom: 20px;">
+                <button id="auto-ann-toggle" class="glass-btn" style="width: 100%; padding: 15px;">AUTOMATICKÉ HLÁŠENÍ: VYPNUTO</button>
+            </div>
+            <div class="ann-columns">
+                <div class="ann-col"><h3>PŘÍJEZDY</h3><div id="arrivals-queue"></div></div>
+                <div class="ann-col"><h3>ODJEZDY</h3><div id="departures-queue"></div></div>
+            </div>
+        </div>
     </div>
 
     <script src="app.js"></script>
