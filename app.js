@@ -9,6 +9,9 @@ let allStations = [];
 let currentStation = null;
 let refreshInterval = null;
 
+// Seznam stanic, které chceme v jízdním řádu přeskočit
+const EXCLUDED_STATIONS = ["Koluszki PZS R145", "Koluszki PZS R154"];
+
 async function fetchData(url) {
     try {
         const response = await fetch(url);
@@ -17,15 +20,14 @@ async function fetchData(url) {
 }
 
 function getServerTime() {
-    return new Date(Date.now() + serverTimeOffset);
+    // Přidáváme offset a korekci 1 hodiny (3600000 ms)
+    return new Date(Date.now() + serverTimeOffset + 3600000);
 }
 
-// Hodiny
 setInterval(() => {
     document.getElementById('clock').innerText = getServerTime().toLocaleTimeString('cs-CZ');
 }, 1000);
 
-// Přepínání stránek
 document.getElementById('enter-dispatch').onclick = () => {
     document.getElementById('home-screen').classList.add('hidden');
     document.getElementById('main-content').classList.remove('hidden');
@@ -58,11 +60,10 @@ function renderStations(stations) {
     });
 }
 
-// Hledání (stanice nebo vlak)
 document.getElementById('global-search').oninput = (e) => {
     const term = e.target.value.toLowerCase();
     if (currentStation) {
-        updateBoardData(term); // Pokud jsme v detailu, filtrujeme vlaky
+        updateBoardData(term);
     } else {
         const filtered = allStations.filter(s => s.Name.toLowerCase().includes(term));
         renderStations(filtered);
@@ -77,10 +78,21 @@ async function openBoard(name) {
     document.getElementById('station-view').classList.remove('hidden');
     document.getElementById('back-btn').classList.remove('hidden');
     document.getElementById('brand-info').classList.add('hidden');
-    document.getElementById('global-search').placeholder = "Hledat vlak v této stanici...";
+    document.getElementById('global-search').placeholder = "Hledat vlak...";
 
     updateBoardData();
-    refreshInterval = setInterval(updateBoardData, 30000); // Auto-refresh 30s
+    if (refreshInterval) clearInterval(refreshInterval);
+    refreshInterval = setInterval(updateBoardData, 30000);
+}
+
+function getValidStation(timetable, currentIndex, direction) {
+    let searchIndex = currentIndex + direction;
+    while (searchIndex >= 0 && searchIndex < timetable.length) {
+        const stationName = timetable[searchIndex].nameForPerson;
+        if (!EXCLUDED_STATIONS.includes(stationName)) return stationName;
+        searchIndex += direction;
+    }
+    return direction === -1 ? "Výchozí" : "Konečná";
 }
 
 async function updateBoardData(filterTerm = "") {
@@ -92,40 +104,35 @@ async function updateBoardData(filterTerm = "") {
     const now = getServerTime();
     body.innerHTML = "";
 
-    const filteredTrains = edr.filter(t => {
+    edr.filter(t => {
         const isInStation = t.timetable.some(s => s.nameForPerson === currentStation);
-        const matchesSearch = t.trainNoLocal.toString().includes(filterTerm) || t.trainName.toLowerCase().includes(filterTerm);
-        return isInStation && matchesSearch;
-    });
-
-    filteredTrains.sort((a,b) => {
+        const matches = t.trainNoLocal.toString().includes(filterTerm) || t.trainName.toLowerCase().includes(filterTerm);
+        return isInStation && matches;
+    }).sort((a,b) => {
         const tA = new Date(a.timetable.find(s => s.nameForPerson === currentStation).departureTime);
         const tB = new Date(b.timetable.find(s => s.nameForPerson === currentStation).departureTime);
         return tA - tB;
     }).forEach(item => {
         const stopIndex = item.timetable.findIndex(s => s.nameForPerson === currentStation);
         const stop = item.timetable[stopIndex];
-        const odkud = item.timetable[stopIndex - 1]?.nameForPerson || "Výchozí";
-        const kam = item.timetable[stopIndex + 1]?.nameForPerson || "Konečná";
+        const odkud = getValidStation(item.timetable, stopIndex, -1);
+        const kam = getValidStation(item.timetable, stopIndex, 1);
         
         const live = trains?.data?.find(lt => lt.TrainNoLocal === item.trainNoLocal);
         const delay = live?.TrainData?.Delay || 0;
-        
         const schedDep = new Date(stop.departureTime);
         const realDep = new Date(schedDep.getTime() + delay * 60000);
         
         let statusText = "PŘIJEDE";
         let rowClass = "row-arrival";
 
-        // LOGIKA BAREV A STAVŮ
         if (now > realDep) {
             statusText = "ODJEL";
             rowClass = "row-departed";
         } else if (live?.TrainData?.VDDelayedTimetableIndex === stop.indexOfPoint) {
             statusText = "VE STANICI";
             rowClass = "row-at-station";
-            // Pokud zbývá méně než 1 minuta do reálného odjezdu, začne blikat
-            if ((realDep - now) < 60000 && (realDep - now) > 0) rowClass += " row-departing";
+            if ((realDep - now) < 60000) rowClass += " row-departing";
         }
 
         body.innerHTML += `
