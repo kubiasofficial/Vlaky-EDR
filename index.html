@@ -2,7 +2,8 @@
 <html lang="cs">
 <head>
     <meta charset="UTF-8">
-    <title>SimRail Dispečer 2026</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SimRail Dispečer 2026 | CZ1</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -11,8 +12,13 @@
             <div class="welcome-box">
                 <h1>SimRail CZ1</h1>
                 <div class="search-main">
-                    <input type="text" id="station-search" placeholder="Zadejte název stanice (např. Koluszki)...">
+                    <input type="text" id="station-search" placeholder="Hledat stanici (např. Koluszki)...">
+                    <div style="margin: 15px 0; color: #8a96a3; font-size: 0.9rem;">— NEBO HLEDAT SPOJ —</div>
+                    <input type="text" id="train-global-search" placeholder="Zadejte číslo vlaku (např. 14010)...">
                 </div>
+                
+                <div id="global-train-result" class="hidden"></div>
+                
                 <div id="stations-grid" class="grid-container"></div>
             </div>
         </div>
@@ -23,7 +29,7 @@
             <button id="back-btn" class="glass-btn">← ZPĚT</button>
             <div id="header-center">
                 <h2 id="st-name">NÁZEV STANICE</h2>
-                <input type="text" id="global-search" placeholder="Hledat spoj v této stanici...">
+                <input type="text" id="global-search" placeholder="Hledat v této stanici...">
             </div>
             <div class="header-tools">
                 <button id="view-toggle" class="glass-btn">TABULE</button>
@@ -34,14 +40,14 @@
 
         <div id="station-view">
             <div id="table-header">
-                <div>Čas</div><div>Spoj</div><div>Odkud</div><div>Kam / Cíl</div><div>Nást./Kol.</div><div>Zpoždění</div><div>Stav</div>
+                <div>Příjezd / Odjezd</div><div>Spoj</div><div>Odkud</div><div>Kam / Cíl</div><div>Nást./Kol.</div><div>Zpoždění</div><div>Stav</div>
             </div>
             <div id="departures-body"></div>
         </div>
     </div>
 
     <div id="board-modal" class="modal hidden">
-        <div class="modal-content">
+        <div class="modal-content retro-modal">
             <span class="close" onclick="closeModal('board-modal')">&times;</span>
             <div id="modal-board-container"></div>
         </div>
@@ -50,17 +56,17 @@
     <div id="announcement-modal" class="modal hidden">
         <div class="modal-content ann-modal">
             <span class="close" onclick="closeModal('announcement-modal')">&times;</span>
-            <h2 style="color: var(--accent-green);">STANIČNÍ ROZHLAS</h2>
+            <h2>STANIČNÍ ROZHLAS</h2>
             <div class="ann-controls">
                 <button id="auto-ann-toggle" class="dispatch-btn">AUTOMATICKÉ HLÁŠENÍ: VYPNUTO</button>
             </div>
             <div class="ann-columns">
                 <div class="ann-col">
-                    <h3>PŘÍJEZDY (Blížící se)</h3>
+                    <h3>PŘÍJEZDY</h3>
                     <div id="arrivals-queue"></div>
                 </div>
                 <div class="ann-col">
-                    <h3>ODJEZDY (Ve stanici)</h3>
+                    <h3>ODJEZDY</h3>
                     <div id="departures-queue"></div>
                 </div>
             </div>
