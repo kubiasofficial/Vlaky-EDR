@@ -476,6 +476,14 @@ body::before {
     margin-top: 6px;
 }
 
+.vehicle-inline {
+    display: block;
+    margin-top: 4px;
+    font-size: 0.78rem;
+    color: #b9d5f6;
+    letter-spacing: 0.03em;
+}
+
 .train-class-badge {
     display: inline-flex;
     align-items: center;
@@ -591,6 +599,31 @@ body::before {
     background: rgba(255, 255, 255, 0.1);
     color: #eef5ff;
     font-size: 0.93rem;
+}
+
+.vehicle-badge {
+    border-color: rgba(255, 210, 131, 0.58);
+    background: rgba(255, 182, 83, 0.14);
+}
+
+.consist-line {
+    margin-bottom: 12px;
+    padding: 9px 12px;
+    border-radius: 8px;
+    border: 1px solid rgba(189, 220, 255, 0.26);
+    background: rgba(171, 206, 248, 0.08);
+    color: #d8e9fb;
+    font-size: 0.85rem;
+    line-height: 1.4;
+    word-break: break-word;
+}
+
+.consist-line span {
+    color: #ffe09e;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-right: 6px;
 }
 
 .tt-grid {

@@ -126,6 +126,24 @@ function setClock() {
     }
 }
 
+function parseVehicles(rawVehicles) {
+    const raw = String(rawVehicles || "").trim();
+    if (!raw) {
+        return { leadVehicle: "", consist: "" };
+    }
+
+    const consist = raw.replace(/^\{/, "").replace(/\}$/, "").trim();
+    if (!consist) {
+        return { leadVehicle: "", consist: "" };
+    }
+
+    const firstVehicle = consist.split(",")[0].trim();
+    const modelPart = firstVehicle.includes("/") ? firstVehicle.split("/")[1] : firstVehicle;
+    const leadVehicle = modelPart.split(":")[0].trim();
+
+    return { leadVehicle, consist };
+}
+
 function getTrainClassCode(trainName) {
     const token = String(trainName || "")
         .trim()
@@ -367,6 +385,7 @@ function renderTable(liveData, posData) {
         const position = posData?.data?.find((entry) => entry.id === live?.Id);
         const speed = position ? Math.round(position.Velocity) : 0;
         const delay = live?.TrainData?.Delay || 0;
+        const vehicles = parseVehicles(live?.Vehicles);
         const currentIndex = row.currentIndex;
         const stopIndex = item.timetable.indexOf(stop);
         const originStation = getCleanName(item.timetable, stopIndex, -1);
@@ -395,6 +414,7 @@ function renderTable(liveData, posData) {
                 <div class="cell train-cell" data-label="Spoj">
                     <span class="train-class-badge ${classBadgeClass}">${escapeHtml(classCode)}</span>
                     <b>${escapeHtml(item.trainName)} ${escapeHtml(item.trainNoLocal)}</b>
+                    ${vehicles.leadVehicle ? `<span class="vehicle-inline">Lok/Jednotka: ${escapeHtml(vehicles.leadVehicle)}</span>` : ""}
                 </div>
                 <div class="cell" data-label="Odkud">${escapeHtml(originStation)}</div>
                 <div class="cell" data-label="Kam pojede"><b>${escapeHtml(nextStation || "-")}</b></div>
@@ -406,7 +426,9 @@ function renderTable(liveData, posData) {
                 <div class="detail-topbar">
                     <div class="speed-badge">GPS rychlost: <b>${speed} km/h</b></div>
                     <div class="speed-badge">Souprava: <b>${escapeHtml(item.trainName)} ${escapeHtml(item.trainNoLocal)}</b></div>
+                    ${vehicles.leadVehicle ? `<div class="speed-badge vehicle-badge">Lok/Jednotka: <b>${escapeHtml(vehicles.leadVehicle)}</b></div>` : ""}
                 </div>
+                ${vehicles.consist ? `<div class="consist-line"><span>Sestava:</span> ${escapeHtml(vehicles.consist)}</div>` : ""}
                 <div class="tt-grid tt-grid-head"><div>Příj.</div><div>Odj.</div><div>Stanice</div><div>Nást.</div></div>
                 ${item.timetable.map((entry) => `
                     <div class="tt-grid ${entry.indexOfPoint === currentIndex ? "current-pos" : ""}">
