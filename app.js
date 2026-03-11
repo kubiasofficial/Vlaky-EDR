@@ -144,6 +144,23 @@ function parseVehicles(rawVehicles) {
     return { leadVehicle, consist };
 }
 
+function getVehicleImagePath(vehicles) {
+    const haystack = `${vehicles?.leadVehicle || ""} ${vehicles?.consist || ""}`.toUpperCase();
+    if (haystack.includes("ED250")) return "grafika/ed250-018.png";
+    if (haystack.includes("36WED")) return "grafika/36wed-001.png";
+    return "";
+}
+
+function getVehicleCodeLabel(vehicles) {
+    const raw = String(vehicles?.leadVehicle || "").trim();
+    if (!raw) return "?";
+    const normalized = raw.toUpperCase();
+    if (normalized.includes("ED250")) return "ED250";
+    if (normalized.includes("36WED")) return "36WED";
+    const token = normalized.split(/[-\s]/)[0];
+    return token || "?";
+}
+
 function getTrainClassCode(trainName) {
     const token = String(trainName || "")
         .trim()
@@ -386,6 +403,8 @@ function renderTable(liveData, posData) {
         const speed = position ? Math.round(position.Velocity) : 0;
         const delay = live?.TrainData?.Delay || 0;
         const vehicles = parseVehicles(live?.Vehicles);
+        const vehicleImagePath = getVehicleImagePath(vehicles);
+        const vehicleCodeLabel = getVehicleCodeLabel(vehicles);
         const currentIndex = row.currentIndex;
         const stopIndex = item.timetable.indexOf(stop);
         const originStation = getCleanName(item.timetable, stopIndex, -1);
@@ -411,6 +430,13 @@ function renderTable(liveData, posData) {
         return `
             <div class="train-row ${rowClass}" data-train-id="${escapeHtml(item.trainNoLocal)}">
                 <div class="cell" data-label="Čas">${fmt(stop.arrivalTime)}<br><span class="cell-accent">${fmt(stop.departureTime)}</span></div>
+                <div class="cell vehicle-cell" data-label="Vozidlo">
+                    <span class="vehicle-orb ${vehicleImagePath ? "has-image" : "no-image"}">
+                        ${vehicleImagePath
+                            ? `<img src="${escapeHtml(vehicleImagePath)}" alt="${escapeHtml(vehicleCodeLabel)}">`
+                            : `<span>${escapeHtml(vehicleCodeLabel)}</span>`}
+                    </span>
+                </div>
                 <div class="cell train-cell" data-label="Spoj">
                     <span class="train-class-badge ${classBadgeClass}">${escapeHtml(classCode)}</span>
                     <b>${escapeHtml(item.trainName)} ${escapeHtml(item.trainNoLocal)}</b>
