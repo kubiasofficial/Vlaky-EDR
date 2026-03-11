@@ -1,72 +1,46 @@
 :root {
-    --bg-dark: #0a0f14;
-    --panel-bg: #121921;
-    --accent-blue: #00a2ff;
-    --accent-green: #00ff88;
-    --accent-red: #ff3c41;
-    --neon-cyan: #00f2ff;
-    --text-dim: #8a96a3;
-    --border: rgba(255, 255, 255, 0.1);
+    --bg-dark: #0a0f14; --panel-bg: #121921; --accent-blue: #00a2ff;
+    --accent-green: #00ff88; --accent-red: #ff3c41; --neon-cyan: #00f2ff;
+    --text-dim: #8a96a3; --border: rgba(255, 255, 255, 0.1);
 }
 
-body {
-    background-color: var(--bg-dark);
-    color: #e1e1e1;
-    font-family: 'Segoe UI', sans-serif;
-    margin: 0;
-    overflow-x: hidden;
-}
+body { background: var(--bg-dark); color: #e1e1e1; font-family: 'Segoe UI', sans-serif; margin: 0; }
+.hidden { display: none !important; }
 
 .main-header {
-    position: sticky; top: 0; z-index: 1000;
-    background: rgba(10, 15, 20, 0.95);
-    backdrop-filter: blur(15px);
-    border-bottom: 2px solid var(--accent-blue);
-    display: grid; grid-template-columns: 1fr 2fr 1fr;
-    padding: 10px 30px; align-items: center;
+    position: sticky; top: 0; z-index: 1000; background: rgba(10, 15, 20, 0.95);
+    backdrop-filter: blur(15px); border-bottom: 2px solid var(--accent-blue);
+    display: grid; grid-template-columns: 1fr 2fr 1fr; padding: 10px 30px; align-items: center;
 }
 
 #clock { font-family: monospace; font-size: 1.8rem; color: var(--neon-cyan); text-align: right; }
 .search-container { display: flex; gap: 10px; justify-content: center; }
-#global-search { background: #1a242f; border: 1px solid var(--border); color: white; padding: 10px 15px; border-radius: 5px; width: 300px; outline: none; }
+.glass-btn { background: #1a242f; border: 1px solid var(--border); color: white; padding: 8px 15px; cursor: pointer; border-radius: 4px; }
 
-/* Mřížka stanic */
-.grid-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; padding: 20px; }
-.st-card { background: var(--panel-bg); border-radius: 8px; overflow: hidden; cursor: pointer; position: relative; height: 140px; border: 1px solid var(--border); transition: 0.3s; }
-.st-card img { width: 100%; height: 100%; object-fit: cover; filter: brightness(1.2); transition: 0.3s; }
-.st-card:hover { transform: scale(1.02); border-color: var(--accent-blue); }
-.st-card:hover img { filter: brightness(1.4); }
-.st-card h3 { position: absolute; bottom: 0; width: 100%; text-align: center; background: rgba(0,0,0,0.85); margin: 0; padding: 10px 0; }
-
-/* Tabulka vlaků */
+/* Tabulky a Seznamy */
 .table-header-sticky {
     display: grid; grid-template-columns: 1.2fr 1fr 1.5fr 1.5fr 0.8fr 0.8fr 1fr;
-    padding: 12px 20px; background: #1a242f; font-weight: bold; color: var(--text-dim); text-transform: uppercase;
-    position: sticky; top: 85px; z-index: 900;
+    padding: 12px 20px; background: #1a242f; position: sticky; top: 85px; z-index: 900;
 }
-.train-row {
-    display: grid; grid-template-columns: 1.2fr 1fr 1.5fr 1.5fr 0.8fr 0.8fr 1fr;
-    padding: 15px 20px; border-bottom: 1px solid rgba(255,255,255,0.05); align-items: center;
-}
+.train-row { display: grid; grid-template-columns: 1.2fr 1fr 1.5fr 1.5fr 0.8fr 0.8fr 1fr; padding: 15px 20px; border-bottom: 1px solid rgba(255,255,255,0.05); }
 .row-at-station { border-left: 4px solid var(--accent-green); background: rgba(0, 255, 136, 0.05); }
 .row-departed { opacity: 0.3; filter: grayscale(1); }
 
-/* Retro Modal Tabule */
+/* Modal */
 .modal { position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: flex; justify-content: center; align-items: center; }
 .modal-content { background: #000; width: 95%; max-width: 1300px; padding: 20px; border: 2px solid var(--accent-blue); position: relative; }
 .close { position: absolute; right: 20px; top: 10px; color: white; font-size: 35px; cursor: pointer; }
 
-.board-header-row { display: grid; grid-template-columns: 0.5fr 0.7fr 2fr 1.5fr 0.4fr 0.4fr 1fr 0.5fr; padding: 10px; background: #111; color: #fff; font-size: 0.8rem; text-transform: uppercase; }
-.board-row { display: grid; grid-template-columns: 0.5fr 0.7fr 2fr 1.5fr 0.4fr 0.4fr 1fr 0.5fr; padding: 10px; border-bottom: 1px solid #222; font-family: 'Consolas', monospace; font-size: 1.2rem; align-items: center; }
+/* Hlášení sloupce */
+.ann-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.ann-column { background: #111; padding: 15px; border-radius: 5px; height: 400px; overflow-y: auto; }
+.ann-item { display: flex; justify-content: space-between; background: #1a242f; padding: 10px; margin-bottom: 8px; border-radius: 4px; align-items: center; }
+.btn-speak { background: none; border: 1px solid var(--accent-blue); color: var(--accent-blue); cursor: pointer; padding: 5px 10px; }
 
-/* Barvy tříd vlaků */
-.board-ece, .board-ic, .board-ec, .board-tlk, .board-ex { color: #ff3c41; font-weight: bold; }
-.board-r, .board-os, .board-mpe { color: #00ff88; font-weight: bold; }
-.board-rj, .board-sc { color: #ff8800; font-weight: bold; }
+/* Retro barvy */
+.board-row { display: grid; grid-template-columns: 0.5fr 0.7fr 2fr 1.5fr 0.4fr 0.4fr 1fr 0.5fr; padding: 10px; font-family: 'Consolas', monospace; border-bottom: 1px solid #222; }
+.board-ece, .board-ic, .board-ec, .board-tlk { color: #ff3c41; }
+.board-r, .board-os, .board-mpe { color: #00ff88; }
 .board-orange { color: #ff8800; }
-.board-red { color: #ff3c41; font-weight: bold; }
-
-.cyan { color: var(--neon-cyan); font-weight: bold; }
-.hidden { display: none !important; }
-.glass-btn { background: #1a242f; border: 1px solid var(--border); color: white; padding: 8px 15px; cursor: pointer; border-radius: 4px; }
-.dispatch-btn { background: var(--accent-blue); color: white; border: none; padding: 15px 40px; cursor: pointer; border-radius: 4px; font-weight: bold; }
+.dispatch-btn { background: var(--accent-blue); color: white; border: none; padding: 10px 20px; cursor: pointer; font-weight: bold; }
+.dispatch-btn.active { background: var(--accent-green); color: black; }

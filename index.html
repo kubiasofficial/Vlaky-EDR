@@ -20,6 +20,7 @@
             <div class="search-container">
                 <input type="text" id="global-search" placeholder="Hledat stanici nebo vlak...">
                 <button id="view-toggle" class="glass-btn hidden">TABULE</button>
+                <button id="announcement-btn" class="glass-btn hidden">HLÁŠENÍ</button>
             </div>
             <div id="clock">00:00:00</div>
         </div>
@@ -29,13 +30,7 @@
         <div id="station-view" class="hidden">
             <h2 id="st-name" style="text-align: center; color: var(--neon-cyan); letter-spacing: 2px; text-transform: uppercase;"></h2>
             <div id="table-header" class="table-header-sticky">
-                <div>Čas</div>
-                <div>Spoj</div>
-                <div>Odkud</div>
-                <div>Kam / Cíl</div>
-                <div>Nást./Kol.</div>
-                <div>Zpoždění</div>
-                <div>Stav</div>
+                <div>Čas</div><div>Spoj</div><div>Odkud</div><div>Kam / Cíl</div><div>Nást./Kol.</div><div>Zpoždění</div><div>Stav</div>
             </div>
             <div id="departures-body"></div>
         </div>
@@ -43,8 +38,28 @@
 
     <div id="board-modal" class="modal hidden">
         <div class="modal-content">
-            <span id="close-modal" class="close">&times;</span>
+            <span class="close" onclick="closeModal('board-modal')">&times;</span>
             <div id="modal-board-container"></div>
+        </div>
+    </div>
+
+    <div id="announcement-modal" class="modal hidden">
+        <div class="modal-content" style="border-color: var(--accent-green); max-width: 1000px;">
+            <span class="close" onclick="closeModal('announcement-modal')">&times;</span>
+            <h2 style="text-align: center; color: var(--accent-green);">STANIČNÍ ROZHLAS</h2>
+            <div style="text-align: center; margin-bottom: 20px;">
+                <button id="auto-ann-toggle" class="dispatch-btn">AUTOMATICKÉ HLÁŠENÍ: VYPNUTO</button>
+            </div>
+            <div class="ann-columns">
+                <div class="ann-column">
+                    <h3>PŘÍJEZDY</h3>
+                    <div id="arrivals-queue"></div>
+                </div>
+                <div class="ann-column">
+                    <h3>ODJEZDY</h3>
+                    <div id="departures-queue"></div>
+                </div>
+            </div>
         </div>
     </div>
 
