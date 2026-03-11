@@ -12,11 +12,12 @@
 body {
     background-color: var(--bg-dark);
     color: #e1e1e1;
-    font-family: 'Segoe UI', sans-serif;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     margin: 0;
+    overflow-x: hidden;
 }
 
-/* Fixní hlavička */
+/* Fixní záhlaví */
 .main-header {
     position: sticky;
     top: 0;
@@ -30,10 +31,11 @@ body {
     align-items: center;
 }
 
-#clock { font-family: monospace; font-size: 1.8rem; color: var(--neon-cyan); text-align: right; }
-#global-search { background: #1a242f; border: 1px solid var(--border); color: white; padding: 10px 15px; border-radius: 5px; width: 100%; max-width: 400px; outline: none; }
+#clock { font-family: 'Courier New', Courier, monospace; font-size: 1.8rem; color: var(--neon-cyan); text-align: right; font-weight: bold; }
+#global-search { background: #1a242f; border: 1px solid var(--border); color: white; padding: 10px 15px; border-radius: 5px; width: 100%; max-width: 400px; outline: none; transition: 0.3s; }
+#global-search:focus { border-color: var(--accent-blue); box-shadow: 0 0 10px rgba(0, 162, 255, 0.3); }
 
-/* Tabulka a řádky */
+/* Sticky popisky sloupců */
 .table-header-sticky {
     position: sticky;
     top: 85px; 
@@ -46,44 +48,40 @@ body {
     color: var(--text-dim);
     text-transform: uppercase;
     z-index: 900;
+    border-bottom: 1px solid var(--border);
 }
 
+/* Řádky tabulky */
 .train-row {
     display: grid;
     grid-template-columns: 1.2fr 1fr 1.5fr 1.5fr 0.8fr 0.8fr 1fr;
     padding: 15px 20px;
     border-bottom: 1px solid rgba(255,255,255,0.05);
     align-items: center;
+    transition: background 0.2s;
 }
 
-/* Animace pro vlak ve stanici */
 @keyframes pulse-green {
     0% { background: rgba(0, 255, 136, 0.03); }
     50% { background: rgba(0, 255, 136, 0.12); }
     100% { background: rgba(0, 255, 136, 0.03); }
 }
 
-.row-at-station { 
-    border-left: 4px solid var(--accent-green); 
-    animation: pulse-green 2s infinite; 
-}
+.row-at-station { border-left: 4px solid var(--accent-green); animation: pulse-green 2s infinite; }
 .row-arrival { border-left: 4px solid var(--accent-blue); }
 .row-departed { opacity: 0.3; filter: grayscale(1); }
 
-/* Karty stanic s vysokým jasem */
+/* Mřížka stanic s jasnými obrázky */
 .grid-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; padding: 20px; }
 .st-card { background: var(--panel-bg); border-radius: 8px; overflow: hidden; cursor: pointer; border: 1px solid var(--border); position: relative; height: 140px; transition: 0.3s; }
-.st-card img { 
-    width: 100%; height: 100%; object-fit: cover; 
-    opacity: 0.8; /* Rozjasněno */
-    filter: brightness(1.1); 
-    transition: 0.3s;
-}
+.st-card img { width: 100%; height: 100%; object-fit: cover; opacity: 0.85; filter: brightness(1.1); transition: 0.3s; }
+.st-card:hover { transform: translateY(-5px); border-color: var(--accent-blue); }
 .st-card:hover img { opacity: 1; filter: brightness(1.3); }
-.st-card h3 { position: absolute; bottom: 0; width: 100%; text-align: center; background: rgba(0,0,0,0.85); margin: 0; padding: 10px 0; }
+.st-card h3 { position: absolute; bottom: 0; width: 100%; text-align: center; background: rgba(10, 15, 20, 0.9); margin: 0; padding: 10px 0; font-size: 0.95rem; }
 
 .cyan { color: var(--neon-cyan); font-weight: bold; }
-.time-label { font-size: 0.65rem; opacity: 0.5; display: block; }
+.time-label { font-size: 0.65rem; opacity: 0.5; display: block; margin-bottom: 2px; }
 .hidden { display: none !important; }
-.glass-btn { background: #1a242f; border: 1px solid var(--border); color: white; padding: 6px 12px; cursor: pointer; border-radius: 4px; }
-.dispatch-btn { background: var(--accent-blue); color: white; border: none; padding: 12px 30px; border-radius: 4px; cursor: pointer; }
+.glass-btn { background: #1a242f; border: 1px solid var(--border); color: white; padding: 8px 16px; cursor: pointer; border-radius: 4px; font-weight: bold; }
+.dispatch-btn { background: var(--accent-blue); color: white; border: none; padding: 15px 40px; border-radius: 4px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+.dispatch-btn:hover { background: #008ae6; box-shadow: 0 0 20px rgba(0, 162, 255, 0.4); }
