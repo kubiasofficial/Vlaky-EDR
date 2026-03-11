@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SimRail Live Board | CZ1</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="overlay"></div>
+    <header class="glass">
+        <div class="header-left">
+            <span class="live-indicator"><span class="pulse"></span> LIVE</span>
+            <h1>SIMRAIL <span class="cyan">CZ1</span></h1>
+        </div>
+        <div id="clock" class="clock">--:--:--</div>
+        <button id="back-btn" class="hidden">ZPĚT NA VÝBĚR</button>
+    </header>
+
+    <main id="app">
+        <div id="stations-grid" class="grid-container"></div>
+
+        <section id="station-view" class="hidden">
+            <div class="station-header glass">
+                <h2 id="st-name">Název stanice</h2>
+                <div id="st-info" class="st-meta">Načítání grafikonu...</div>
+            </div>
+            <div class="board-container glass">
+                <table class="departure-table">
+                    <thead>
+                        <tr>
+                            <th>Čas</th>
+                            <th>Spoj</th>
+                            <th>Cílová stanice</th>
+                            <th>Nást.</th>
+                            <th>Kolej</th>
+                            <th>Zpoždění</th>
+                            <th>Poznámky</th>
+                        </tr>
+                    </thead>
+                    <tbody id="departures-body"></tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+{
+  "rewrites": [
+    {
+      "source": "/api-simrail/:path*",
+      "destination": "https://panel.simrail.eu:8084/:path*"
+    },
+    {
+      "source": "/api-aws/:path*",
+      "destination": "https://api1.aws.simrail.eu:8082/api/:path*"
+    }
+  ]
+}
