@@ -174,11 +174,30 @@ function getVehicleImagePath(vehicles) {
     return "";
 }
 
+function getClassFallbackImage(classCode) {
+    const code = String(classCode || "").toUpperCase();
+
+    if (["EIP", "EIC", "ECE", "EC", "IC"].includes(code)) {
+        return "https://wiki.simrail.eu/vehicle/ed250-001.png";
+    }
+    if (["TLK", "MPE"].includes(code)) {
+        return "https://wiki.simrail.eu/vehicle/eu07-005.png";
+    }
+    if (["R", "RE", "REG", "KS", "KD", "EN"].includes(code)) {
+        return "https://wiki.simrail.eu/vehicle/en57-009.png";
+    }
+    if (["TME", "LTE"].includes(code)) {
+        return "https://wiki.simrail.eu/vehicle/et25-002.png";
+    }
+
+    return "https://wiki.simrail.eu/vehicle/eu07-005.png";
+}
+
 function getVehicleCodeLabel(vehicles) {
     const fromLead = String(vehicles?.leadVehicle || "").trim();
     const fromConsist = String(vehicles?.consist || "").split(",")[0].trim();
     const raw = fromLead || fromConsist;
-    if (!raw) return "NEZNAMY";
+    if (!raw) return "VOZIDLO";
 
     const normalized = raw.toUpperCase();
     if (normalized.includes("ED250")) return "ED250";
@@ -191,7 +210,7 @@ function getVehicleCodeLabel(vehicles) {
         .split("/")
         .pop();
 
-    return token || "NEZNAMY";
+    return token || "VOZIDLO";
 }
 
 function getTrainClassCode(trainName) {
@@ -491,12 +510,13 @@ function renderTable(liveData, posData) {
         const delay = row.delayMinutes || 0;
         const vehicles = parseVehicles(live?.Vehicles);
         const vehicleImagePath = getVehicleImagePath(vehicles);
+        const classCode = getTrainClassCode(item.trainName);
+        const resolvedVehicleImagePath = vehicleImagePath || getClassFallbackImage(classCode);
         const vehicleCodeLabel = getVehicleCodeLabel(vehicles);
         const currentIndex = row.currentIndex;
         const stopIndex = item.timetable.indexOf(stop);
         const originStation = getCleanName(item.timetable, stopIndex, -1);
         const nextStation = getCleanName(item.timetable, stopIndex, 1);
-        const classCode = getTrainClassCode(item.trainName);
         const classBadgeClass = getTrainClassBadgeClass(classCode);
         let status = "PŘIJEDE";
         let rowClass = "";
@@ -523,10 +543,8 @@ function renderTable(liveData, posData) {
                     ${vehicles.leadVehicle ? `<span class="vehicle-inline">Lok/Jednotka: ${escapeHtml(vehicles.leadVehicle)}</span>` : ""}
                 </div>
                 <div class="cell vehicle-cell" data-label="Vozidlo">
-                    <span class="vehicle-orb ${vehicleImagePath ? "has-image" : "no-image"}">
-                        ${vehicleImagePath
-                            ? `<img src="${escapeHtml(vehicleImagePath)}" alt="${escapeHtml(vehicleCodeLabel)}" onerror="this.onerror=null;this.src='grafika/eu07-005.png';">`
-                            : `<span>${escapeHtml(vehicleCodeLabel)}</span>`}
+                    <span class="vehicle-orb has-image">
+                        <img src="${escapeHtml(resolvedVehicleImagePath)}" alt="${escapeHtml(vehicleCodeLabel)}" onerror="this.onerror=null;this.src='grafika/eu07-005.png';">
                     </span>
                     <span class="vehicle-caption">${escapeHtml(classCode)} ${escapeHtml(String(item.trainNoLocal || ""))}</span>
                 </div>
