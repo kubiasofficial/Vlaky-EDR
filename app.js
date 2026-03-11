@@ -211,7 +211,7 @@ function applyRowsUiState(rows) {
     const query = norm(uiState.trainQuery);
 
     let filtered = rows.filter((row) => {
-        const delay = row.live?.TrainData?.Delay || 0;
+        const delay = row.delayMinutes || 0;
         const inStation = row.currentIndex === row.stop.indexOfPoint;
         const classCode = getTrainClassCode(row.train?.trainName);
 
@@ -227,7 +227,7 @@ function applyRowsUiState(rows) {
 
     if (uiState.sortMode === "delay") {
         filtered = filtered.slice().sort((first, second) => {
-            const delayDiff = (second.live?.TrainData?.Delay || 0) - (first.live?.TrainData?.Delay || 0);
+            const delayDiff = (second.delayMinutes || 0) - (first.delayMinutes || 0);
             if (delayDiff !== 0) return delayDiff;
             return first.plannedTime - second.plannedTime;
         });
@@ -264,6 +264,40 @@ function getApiHint() {
 
 function getStopPlanDate(stop) {
     return new Date(stop?.departureTime || stop?.arrivalTime || 0);
+}
+
+function getPointDelayMinutes(point) {
+    if (!point) return null;
+
+    const plannedRaw = point.departureTime || point.arrivalTime;
+    const actualRaw = point.actualDepartureTime || point.actualArrivalTime;
+    if (!plannedRaw || !actualRaw) return null;
+
+    const plannedMs = new Date(plannedRaw).getTime();
+    const actualMs = new Date(actualRaw).getTime();
+    if (!Number.isFinite(plannedMs) || !Number.isFinite(actualMs)) return null;
+
+    return Math.max(0, Math.round((actualMs - plannedMs) / 60000));
+}
+
+function computeTrainDelayMinutes(train, stop, currentIndex) {
+    const stopDelay = getPointDelayMinutes(stop);
+    if (stopDelay !== null) return stopDelay;
+
+    if (currentIndex >= 0) {
+        const currentPoint = train.timetable.find((entry) => entry.indexOfPoint === currentIndex);
+        const currentDelay = getPointDelayMinutes(currentPoint);
+        if (currentDelay !== null) return currentDelay;
+
+        for (let index = train.timetable.length - 1; index >= 0; index -= 1) {
+            const entry = train.timetable[index];
+            if (entry.indexOfPoint > currentIndex) continue;
+            const historicalDelay = getPointDelayMinutes(entry);
+            if (historicalDelay !== null) return historicalDelay;
+        }
+    }
+
+    return 0;
 }
 
 function isRetroCandidate(row) {
@@ -354,7 +388,7 @@ function renderRetroBoard() {
                 const stop = row.stop;
                 const live = row.live;
                 const currentIndex = row.currentIndex;
-                const delay = live?.TrainData?.Delay || 0;
+                const delay = row.delayMinutes || 0;
                 const stopIndex = item.timetable.indexOf(stop);
                 const origin = getCleanName(item.timetable, stopIndex, -1);
                 const nextStation = getCleanName(item.timetable, stopIndex, 1);
@@ -412,7 +446,7 @@ function renderTable(liveData, posData) {
         const live = row.live;
         const position = posData?.data?.find((entry) => entry.id === live?.Id);
         const speed = position ? Math.round(position.Velocity) : 0;
-        const delay = live?.TrainData?.Delay || 0;
+        const delay = row.delayMinutes || 0;
         const vehicles = parseVehicles(live?.Vehicles);
         const vehicleImagePath = getVehicleImagePath(vehicles);
         const vehicleCodeLabel = getVehicleCodeLabel(vehicles);
