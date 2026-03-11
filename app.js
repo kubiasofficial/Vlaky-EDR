@@ -309,7 +309,9 @@ function renderRetroBoard() {
                 const live = row.live;
                 const currentIndex = row.currentIndex;
                 const delay = live?.TrainData?.Delay || 0;
-                const origin = getCleanName(item.timetable, item.timetable.indexOf(stop), -1);
+                const stopIndex = item.timetable.indexOf(stop);
+                const origin = getCleanName(item.timetable, stopIndex, -1);
+                const nextStation = getCleanName(item.timetable, stopIndex, 1);
                 let status = "PŘIJEDE";
                 let retroRowClass = "";
                 if (currentIndex === stop?.indexOfPoint) status = "VE STANICI";
@@ -324,7 +326,7 @@ function renderRetroBoard() {
                             <strong>${escapeHtml(item.trainName)} ${escapeHtml(item.trainNoLocal)}</strong>
                             <span>${escapeHtml(origin)}</span>
                         </div>
-                        <div class="retro-dir-cell">${escapeHtml(item.endStation || "-")}</div>
+                        <div class="retro-dir-cell">${escapeHtml(nextStation || "-")}</div>
                         <div class="retro-platform-cell">${escapeHtml(stop?.platform || "-")}/${escapeHtml(stop?.track || "-")}</div>
                         <div class="retro-delay-cell">+${delay}</div>
                         <div class="retro-status-cell">${status}</div>
@@ -366,6 +368,9 @@ function renderTable(liveData, posData) {
         const speed = position ? Math.round(position.Velocity) : 0;
         const delay = live?.TrainData?.Delay || 0;
         const currentIndex = row.currentIndex;
+        const stopIndex = item.timetable.indexOf(stop);
+        const originStation = getCleanName(item.timetable, stopIndex, -1);
+        const nextStation = getCleanName(item.timetable, stopIndex, 1);
         const classCode = getTrainClassCode(item.trainName);
         const classBadgeClass = getTrainClassBadgeClass(classCode);
         let status = "PŘIJEDE";
@@ -391,8 +396,8 @@ function renderTable(liveData, posData) {
                     <span class="train-class-badge ${classBadgeClass}">${escapeHtml(classCode)}</span>
                     <b>${escapeHtml(item.trainName)} ${escapeHtml(item.trainNoLocal)}</b>
                 </div>
-                <div class="cell" data-label="Odkud">${escapeHtml(getCleanName(item.timetable, item.timetable.indexOf(stop), -1))}</div>
-                <div class="cell" data-label="Cílová stanice"><b>${escapeHtml(item.endStation || "-")}</b></div>
+                <div class="cell" data-label="Odkud">${escapeHtml(originStation)}</div>
+                <div class="cell" data-label="Kam pojede"><b>${escapeHtml(nextStation || "-")}</b></div>
                 <div class="cell" data-label="Nást./Kol.">${escapeHtml(stop.platform || "-")}/${escapeHtml(stop.track || "-")}</div>
                 <div class="cell ${delay > 0 ? "delay-high" : "delay-ok"}" data-label="Zpoždění">+${delay} min</div>
                 <div class="cell status-cell ${statusClass}" data-label="Stav"><b>${status}</b></div>
