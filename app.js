@@ -2,14 +2,12 @@ const SERVER = "cz1";
 const API_STATIONS = `/api-simrail/stations-open?serverCode=${SERVER}`;
 const API_TRAINS = `/api-simrail/trains-open?serverCode=${SERVER}`;
 const API_EDR = `/api-aws/getEDRTimetables?serverCode=${SERVER}`;
-const API_TIME = `/api-aws/getTime?serverCode=${SERVER}`;
 
-let serverTimeOffset = 0;
 let allStations = [];
 let currentStation = null;
 let refreshInterval = null;
 
-// Seznam stanic, které chceme v jízdním řádu přeskočit
+// Výjimky pro technické stanice
 const EXCLUDED_STATIONS = ["Koluszki PZS R145", "Koluszki PZS R154"];
 
 async function fetchData(url) {
@@ -19,13 +17,13 @@ async function fetchData(url) {
     } catch (e) { return null; }
 }
 
-function getServerTime() {
-    // Přidáváme offset a korekci 1 hodiny (3600000 ms)
-    return new Date(Date.now() + serverTimeOffset + 3600000);
+// Bere čas přímo z tvého počítače
+function getNow() {
+    return new Date();
 }
 
 setInterval(() => {
-    document.getElementById('clock').innerText = getServerTime().toLocaleTimeString('cs-CZ');
+    document.getElementById('clock').innerText = getNow().toLocaleTimeString('cs-CZ');
 }, 1000);
 
 document.getElementById('enter-dispatch').onclick = () => {
@@ -35,8 +33,6 @@ document.getElementById('enter-dispatch').onclick = () => {
 };
 
 async function initDispatch() {
-    const timeData = await fetchData(API_TIME);
-    if (timeData) serverTimeOffset = parseInt(timeData) - Date.now();
     await loadStations();
 }
 
@@ -53,7 +49,7 @@ function renderStations(stations) {
     grid.innerHTML = "";
     stations.forEach(st => {
         const card = document.createElement('div');
-        card.className = 'st-card glass-panel';
+        card.className = 'st-card glass-panel animate-fade-in';
         card.innerHTML = `<img src="${st.MainImageURL}"><h3>${st.Name}</h3>`;
         card.onclick = () => openBoard(st.Name);
         grid.appendChild(card);
@@ -78,13 +74,13 @@ async function openBoard(name) {
     document.getElementById('station-view').classList.remove('hidden');
     document.getElementById('back-btn').classList.remove('hidden');
     document.getElementById('brand-info').classList.add('hidden');
-    document.getElementById('global-search').placeholder = "Hledat vlak...";
 
     updateBoardData();
     if (refreshInterval) clearInterval(refreshInterval);
     refreshInterval = setInterval(updateBoardData, 30000);
 }
 
+// Funkce pro nalezení nejbližší netechnické stanice
 function getValidStation(timetable, currentIndex, direction) {
     let searchIndex = currentIndex + direction;
     while (searchIndex >= 0 && searchIndex < timetable.length) {
@@ -101,7 +97,7 @@ async function updateBoardData(filterTerm = "") {
     const [edr, trains] = await Promise.all([fetchData(API_EDR), fetchData(API_TRAINS)]);
     if (!edr) return;
 
-    const now = getServerTime();
+    const now = getNow();
     body.innerHTML = "";
 
     edr.filter(t => {
@@ -120,6 +116,8 @@ async function updateBoardData(filterTerm = "") {
         
         const live = trains?.data?.find(lt => lt.TrainNoLocal === item.trainNoLocal);
         const delay = live?.TrainData?.Delay || 0;
+        
+        // JS automaticky převede UTC čas z API na tvůj lokální čas v PC
         const schedDep = new Date(stop.departureTime);
         const realDep = new Date(schedDep.getTime() + delay * 60000);
         
@@ -132,7 +130,7 @@ async function updateBoardData(filterTerm = "") {
         } else if (live?.TrainData?.VDDelayedTimetableIndex === stop.indexOfPoint) {
             statusText = "VE STANICI";
             rowClass = "row-at-station";
-            if ((realDep - now) < 60000) rowClass += " row-departing";
+            if ((realDep - now) < 60000 && (realDep - now) > 0) rowClass += " row-departing";
         }
 
         body.innerHTML += `
@@ -142,7 +140,9 @@ async function updateBoardData(filterTerm = "") {
                 <td>${odkud}</td>
                 <td><b>${kam}</b><br><small>Cíl: ${item.endStation}</small></td>
                 <td>${stop.platform || '-'}/${stop.track || '-'}</td>
-                <td style="font-weight:bold">${delay > 0 ? '+'+delay+' min' : (delay < 0 ? delay : 'VČAS')}</td>
+                <td style="font-weight:bold; color:${delay > 0 ? 'var(--accent-red)' : 'var(--accent-green)'}">
+                    ${delay > 0 ? '+'+delay+' min' : (delay < 0 ? delay : 'VČAS')}
+                </td>
                 <td>${statusText}</td>
             </tr>`;
     });
