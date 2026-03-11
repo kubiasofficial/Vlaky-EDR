@@ -8,8 +8,7 @@
 </head>
 <body>
     <div id="home-screen" class="full-screen">
-        <div class="glass-panel central-hero animate-fade-up">
-            <div class="flag-stripe"></div>
+        <div class="glass-panel central-hero">
             <h1>SimRail <span class="cyan">CZ1</span></h1>
             <p>Informační systém pro dispečery</p>
             <button id="enter-dispatch" class="dispatch-btn">VSTOUPIT DO DISPEČERSKÉHO REŽIMU</button>
@@ -17,19 +16,13 @@
     </div>
 
     <div id="main-content" class="hidden">
-        <header>
+        <header class="main-header">
             <div class="header-left">
                 <button id="back-btn" class="hidden glass-btn">← ZPĚT</button>
-                <div id="brand-info">
-                    <div class="live-dot"></div>
-                    <span class="brand-text">SIMRAIL <span class="cyan">CZ1</span></span>
-                </div>
             </div>
             <div class="header-center">
-                <h2 id="st-name" class="hidden">VYBERTE STANICI</h2>
-                <div class="search-wrapper" id="search-area">
-                    <input type="text" id="global-search" placeholder="Hledat stanici nebo vlak...">
-                </div>
+                <h2 id="st-name">VYBERTE STANICI</h2>
+                <input type="text" id="global-search" placeholder="Hledat stanici nebo vlak...">
             </div>
             <div class="header-right">
                 <div id="clock">--:--:--</div>
@@ -38,23 +31,18 @@
 
         <main class="container">
             <div id="stations-grid" class="grid-container"></div>
-            <div id="station-view" class="hidden animate-fade-in">
-                <div class="table-wrapper glass-panel">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Příjezd / Odjezd</th>
-                                <th>Spoj</th>
-                                <th>Odkud</th>
-                                <th>Kam</th>
-                                <th>Nást. / Kol.</th>
-                                <th>Zpoždění</th>
-                                <th>Stav</th>
-                            </tr>
-                        </thead>
-                        <tbody id="departures-body"></tbody>
-                    </table>
+            
+            <div id="station-view" class="hidden">
+                <div class="table-header-sticky">
+                    <div class="th-item">Příjezd / Odjezd</div>
+                    <div class="th-item">Spoj</div>
+                    <div class="th-item">Odkud</div>
+                    <div class="th-item">Kam (Cíl)</div>
+                    <div class="th-item">Nást. / Kol.</div>
+                    <div class="th-item">Zpoždění</div>
+                    <div class="th-item">Stav</div>
                 </div>
+                <div id="departures-body"></div>
             </div>
         </main>
     </div>
