@@ -359,8 +359,12 @@ function renderStationGrid(stations) {
     elements.stationsGrid.innerHTML = stations
         .map((station) => {
             const initials = station.Name.split(/\s+/).filter(Boolean).slice(0, 2).map((word) => word[0]).join("").toUpperCase();
+            const imageUrl = String(station.MainImageURL || "").trim();
             return `
-                <button type="button" class="st-card" data-station="${escapeHtml(station.Name)}">
+                <button type="button" class="st-card ${imageUrl ? "has-photo" : "no-photo"}" data-station="${escapeHtml(station.Name)}">
+                    <span class="st-card-bg" aria-hidden="true">
+                        ${imageUrl ? `<img src="${escapeHtml(imageUrl)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer">` : ""}
+                    </span>
                     <span class="st-card-media" aria-hidden="true">${escapeHtml(initials || "ST")}</span>
                     <span class="st-card-title">${escapeHtml(station.Name)}</span>
                 </button>
