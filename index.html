@@ -3,45 +3,59 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SimRail Live Board | Dispečerský režim</title>
+    <title>SimRail Live Board | Portál</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <header>
-        <div class="logo-section">
-            <div class="live-dot"></div>
-            <h1>SIMRAIL <span class="cyan">CZ1</span></h1>
+    <div id="home-screen" class="full-screen">
+        <div class="glass-panel central-hero animate-fade-up">
+            <div class="flag-stripe"></div>
+            <h1>SimRail <span class="cyan">CZ1</span></h1>
+            <p>Informační systém pro dispečery</p>
+            <button id="enter-dispatch" class="dispatch-btn">VSTOUPIT DO DISPEČERSKÉHO REŽIMU</button>
         </div>
-        <div id="clock">--:--:--</div>
-    </header>
+    </div>
 
-    <main class="container">
-        <button id="back-btn" class="hidden glass-btn">← ZPĚT NA VÝBĚR STANIC</button>
-
-        <div id="stations-grid" class="grid-container">
+    <div id="main-content" class="hidden">
+        <header>
+            <div class="logo-section">
+                <div class="live-dot"></div>
+                <h1>SIMRAIL <span class="cyan">CZ1</span></h1>
+            </div>
+            
+            <div class="search-box">
+                <input type="text" id="station-search" placeholder="Vyhledat stanici...">
             </div>
 
-        <div id="station-view" class="hidden glass-panel">
-            <h2 id="st-name">NÁZEV STANICE</h2>
-            <div class="table-wrapper">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Čas</th>
-                            <th>Vlak</th>
-                            <th>Cíl</th>
-                            <th>Perón</th>
-                            <th>Kolej</th>
-                            <th>Zpoždění</th>
-                            <th>Stav</th>
-                        </tr>
-                    </thead>
-                    <tbody id="departures-body">
-                        </tbody>
-                </table>
+            <div id="clock">--:--:--</div>
+        </header>
+
+        <main class="container">
+            <button id="back-btn" class="hidden glass-btn">← ZPĚT NA VÝBĚR STANIC</button>
+
+            <div id="stations-grid" class="grid-container"></div>
+
+            <div id="station-view" class="hidden glass-panel animate-fade-in">
+                <h2 id="st-name">STANICE</h2>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Čas</th>
+                                <th>Vlak</th>
+                                <th>Cíl</th>
+                                <th>Perón</th>
+                                <th>Kolej</th>
+                                <th>Zpoždění</th>
+                                <th>Stav</th>
+                            </tr>
+                        </thead>
+                        <tbody id="departures-body"></tbody>
+                    </table>
+                </div>
             </div>
-        </div>
-    </main>
+        </main>
+    </div>
     <script src="app.js"></script>
 </body>
 </html>
