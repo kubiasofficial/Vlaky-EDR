@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SimRail Live Board | Portál</title>
+    <title>SimRail Live Board | Dispečer</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -18,34 +18,39 @@
 
     <div id="main-content" class="hidden">
         <header>
-            <div class="logo-section">
-                <div class="live-dot"></div>
-                <h1>SIMRAIL <span class="cyan">CZ1</span></h1>
+            <div class="header-left">
+                <button id="back-btn" class="hidden glass-btn">← ZPĚT</button>
+                <div id="brand-info">
+                    <div class="live-dot"></div>
+                    <span class="brand-text">SIMRAIL <span class="cyan">CZ1</span></span>
+                </div>
             </div>
             
-            <div class="search-box">
-                <input type="text" id="station-search" placeholder="Vyhledat stanici...">
+            <div class="header-center">
+                <h2 id="st-name" class="hidden">VYBERTE STANICI</h2>
+                <div class="search-wrapper" id="search-area">
+                    <input type="text" id="global-search" placeholder="Hledat stanici nebo číslo vlaku...">
+                </div>
             </div>
 
-            <div id="clock">--:--:--</div>
+            <div class="header-right">
+                <div id="clock">--:--:--</div>
+            </div>
         </header>
 
         <main class="container">
-            <button id="back-btn" class="hidden glass-btn">← ZPĚT NA VÝBĚR STANIC</button>
-
             <div id="stations-grid" class="grid-container"></div>
 
-            <div id="station-view" class="hidden glass-panel animate-fade-in">
-                <h2 id="st-name">STANICE</h2>
-                <div class="table-wrapper">
+            <div id="station-view" class="hidden animate-fade-in">
+                <div class="table-wrapper glass-panel">
                     <table>
                         <thead>
                             <tr>
                                 <th>Čas</th>
-                                <th>Vlak</th>
-                                <th>Cíl</th>
-                                <th>Perón</th>
-                                <th>Kolej</th>
+                                <th>Třída / Spoj</th>
+                                <th>Odkud</th>
+                                <th>Kam</th>
+                                <th>Nást. / Kol.</th>
                                 <th>Zpoždění</th>
                                 <th>Stav</th>
                             </tr>
