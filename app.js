@@ -148,22 +148,16 @@ function getVehicleImagePath(vehicles) {
     const haystack = `${vehicles?.leadVehicle || ""} ${vehicles?.consist || ""}`.toUpperCase();
     const compact = haystack.replace(/[^A-Z0-9]/g, "");
 
-    if (compact.includes("ED250")) return "grafika/ed250-018.png";
     if (compact.includes("36WED")) return "grafika/36wed-001.png";
-    if (compact.includes("ET22644")) return "grafika/et22-644.png";
-    if (compact.includes("ET25002")) return "grafika/et25-002.png";
-    if (compact.includes("1630300")) return "grafika/163-030-0.png";
-    if (compact.includes("E186134")) return "grafika/e186-134.png";
-    if (compact.includes("EN571000")) return "grafika/en57-1000.png";
-    if (compact.includes("EP08008")) return "grafika/ep08-008.png";
-    if (compact.includes("EP08013")) return "grafika/ep08-013.png";
-
-    if (compact.includes("ET22")) return "grafika/et22-644.png";
-    if (compact.includes("ET25")) return "grafika/et25-002.png";
+    if (compact.includes("E6ACTA") || compact.includes("DRAGON2")) return "grafika/e6acta-016.png";
+    if (compact.includes("ET22")) return "grafika/et22-836.png";
+    if (compact.includes("EU07") || compact.includes("EP07") || compact.includes("4E")) return "grafika/eu07-005.png";
+    if (compact.includes("EP08")) return "grafika/ep08-001.png";
+    if (compact.includes("163")) return "grafika/163_021-9.png";
     if (compact.includes("E186")) return "grafika/e186-134.png";
-    if (compact.includes("EN57")) return "grafika/en57-1000.png";
-    if (compact.includes("EP08")) return "grafika/ep08-008.png";
-    if (compact.includes("163")) return "grafika/163-030-0.png";
+    if (compact.includes("ED250")) return "grafika/ed250-018.png";
+    if (compact.includes("EN76") || compact.includes("EN96") || compact.includes("ELF")) return "grafika/en76-006.png";
+    if (compact.includes("EN57") || compact.includes("EN71")) return "grafika/en57-1000.png";
 
     return "";
 }
