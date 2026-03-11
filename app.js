@@ -17,8 +17,10 @@ async function fetchData(url) {
     } catch (e) { return null; }
 }
 
+// Živé hodiny
 setInterval(() => {
-    document.getElementById('clock').innerText = new Date().toLocaleTimeString('cs-CZ');
+    const el = document.getElementById('clock');
+    if (el) el.innerText = new Date().toLocaleTimeString('cs-CZ');
 }, 1000);
 
 document.getElementById('enter-dispatch').onclick = () => {
@@ -72,31 +74,29 @@ function getValidStation(timetable, currentIndex, direction) {
 
 async function updateBoardData() {
     if (!currentStation) return;
-    const [edr, trains] = await Promise.all([fetchData(API_EDR), fetchData(API_TRAINS)]);
+    const [edr, liveData] = await Promise.all([fetchData(API_EDR), fetchData(API_TRAINS)]);
     const body = document.getElementById('departures-body');
     const now = new Date();
     body.innerHTML = "";
+
+    if (!edr) return;
 
     const filtered = edr.filter(t => t.timetable.some(s => s.nameForPerson === currentStation))
         .sort((a,b) => {
             const stopA = a.timetable.find(s => s.nameForPerson === currentStation);
             const stopB = b.timetable.find(s => s.nameForPerson === currentStation);
-            const timeA = new Date(stopA.departureTime || stopA.arrivalTime);
-            const timeB = new Date(stopB.departureTime || stopB.arrivalTime);
-            return timeA - timeB;
+            return new Date(stopA.departureTime || stopA.arrivalTime) - new Date(stopB.departureTime || stopB.arrivalTime);
         });
 
     filtered.forEach(item => {
         const stopIndex = item.timetable.findIndex(s => s.nameForPerson === currentStation);
         const stop = item.timetable[stopIndex];
         
-        // PÁROVÁNÍ ZPOŽDĚNÍ (Číslo v EDR vs Číslo na mapě)
-        const liveTrain = trains?.data?.find(lt => 
-            lt.TrainNoLocal === item.trainNoLocal || 
-            lt.TrainNo === item.trainNoLocal
-        );
+        // --- LOGIKA ZPOŽDĚNÍ ---
+        // Hledáme shodu s mapou serveru CZ1
+        const liveTrain = liveData?.data?.find(lt => lt.TrainNoLocal === item.trainNoLocal);
+        const delay = liveTrain ? (liveTrain.TrainData?.Delay || 0) : 0;
         
-        const delay = liveTrain?.TrainData?.Delay || 0;
         const schedArr = stop.arrivalTime ? new Date(stop.arrivalTime) : null;
         const schedDep = stop.departureTime ? new Date(stop.departureTime) : null;
         const realDep = schedDep ? new Date(schedDep.getTime() + delay * 60000) : null;
@@ -107,7 +107,7 @@ async function updateBoardData() {
         if (realDep && now > realDep) {
             rowClass = "row-departed";
             statusText = "ODJEL";
-        } else if (liveTrain?.TrainData?.VDDelayedTimetableIndex === stop.indexOfPoint) {
+        } else if (liveTrain && liveTrain.TrainData?.VDDelayedTimetableIndex === stop.indexOfPoint) {
             rowClass = "row-at-station";
             statusText = "VE STANICI";
         }
@@ -115,15 +115,15 @@ async function updateBoardData() {
         body.innerHTML += `
             <div class="train-row ${rowClass}">
                 <div>
-                    ${schedArr ? `<span class="time-label">Příjezd</span>${schedArr.toLocaleTimeString('cs-CZ',{hour:'2-digit',minute:'2-digit'})}` : '--:--'}
-                    ${schedDep ? `<span class="time-label">Odjezd</span><span class="cyan">${schedDep.toLocaleTimeString('cs-CZ',{hour:'2-digit',minute:'2-digit'})}</span>` : '--:--'}
+                    <span class="time-label">Příjezd</span>${schedArr ? schedArr.toLocaleTimeString('cs-CZ',{hour:'2-digit',minute:'2-digit'}) : '--:--'}
+                    <span class="time-label">Odjezd</span><span class="cyan">${schedDep ? schedDep.toLocaleTimeString('cs-CZ',{hour:'2-digit',minute:'2-digit'}) : '--:--'}</span>
                 </div>
                 <div><b>${item.trainName}</b><br><small>${item.trainNoLocal}</small></div>
                 <div>${getValidStation(item.timetable, stopIndex, -1)}</div>
                 <div><b>${getValidStation(item.timetable, stopIndex, 1)}</b><br><small>Cíl: ${item.endStation}</small></div>
                 <div>${stop.platform || '-'}/${stop.track || '-'}</div>
-                <div style="color:${delay > 0 ? 'var(--accent-red)' : 'var(--accent-green)'}; font-weight:bold;">
-                    ${delay !== 0 ? (delay > 0 ? '+'+delay : delay) + ' min' : 'VČAS'}
+                <div style="color:${delay > 0 ? 'var(--accent-red)' : (liveTrain ? 'var(--accent-green)' : 'var(--text-dim)')}; font-weight:bold;">
+                    ${liveTrain ? (delay !== 0 ? (delay > 0 ? '+'+delay : delay) + ' min' : 'VČAS') : 'MIMO MAPU'}
                 </div>
                 <div>${statusText}</div>
             </div>`;
@@ -132,15 +132,8 @@ async function updateBoardData() {
     if (isFirstLoad) {
         const firstActive = body.querySelector('.row-at-station, .row-arrival');
         if (firstActive) {
-            setTimeout(() => {
-                const offset = 150;
-                const bodyRect = document.body.getBoundingClientRect().top;
-                const elementRect = firstActive.getBoundingClientRect().top;
-                const elementPosition = elementRect - bodyRect;
-                const offsetPosition = elementPosition - offset;
-                window.scrollTo({ top: offsetPosition, behavior: 'smooth' });
-                isFirstLoad = false;
-            }, 500);
+            firstActive.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            isFirstLoad = false;
         }
     }
 }
