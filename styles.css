@@ -16,6 +16,7 @@ body {
     margin: 0;
 }
 
+/* Fixní hlavička */
 .main-header {
     position: sticky;
     top: 0;
@@ -31,8 +32,8 @@ body {
 
 #clock { font-family: monospace; font-size: 1.8rem; color: var(--neon-cyan); text-align: right; }
 #global-search { background: #1a242f; border: 1px solid var(--border); color: white; padding: 10px 15px; border-radius: 5px; width: 100%; max-width: 400px; outline: none; }
-#global-search:focus { border-color: var(--accent-blue); }
 
+/* Tabulka a řádky */
 .table-header-sticky {
     position: sticky;
     top: 85px; 
@@ -45,7 +46,6 @@ body {
     color: var(--text-dim);
     text-transform: uppercase;
     z-index: 900;
-    border-bottom: 1px solid var(--border);
 }
 
 .train-row {
@@ -56,29 +56,34 @@ body {
     align-items: center;
 }
 
+/* Animace pro vlak ve stanici */
+@keyframes pulse-green {
+    0% { background: rgba(0, 255, 136, 0.03); }
+    50% { background: rgba(0, 255, 136, 0.12); }
+    100% { background: rgba(0, 255, 136, 0.03); }
+}
+
+.row-at-station { 
+    border-left: 4px solid var(--accent-green); 
+    animation: pulse-green 2s infinite; 
+}
 .row-arrival { border-left: 4px solid var(--accent-blue); }
-.row-at-station { border-left: 4px solid var(--accent-green); background: rgba(0, 255, 136, 0.03); }
 .row-departed { opacity: 0.3; filter: grayscale(1); }
 
-/* ROZJASNĚNÍ OBRÁZKŮ */
+/* Karty stanic s vysokým jasem */
 .grid-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; padding: 20px; }
 .st-card { background: var(--panel-bg); border-radius: 8px; overflow: hidden; cursor: pointer; border: 1px solid var(--border); position: relative; height: 140px; transition: 0.3s; }
 .st-card img { 
-    width: 100%; 
-    height: 100%; 
-    object-fit: cover; 
-    opacity: 0.75; /* Vyšší základní jas */
-    filter: brightness(1); 
+    width: 100%; height: 100%; object-fit: cover; 
+    opacity: 0.8; /* Rozjasněno */
+    filter: brightness(1.1); 
     transition: 0.3s;
 }
-.st-card:hover { transform: scale(1.02); border-color: var(--accent-blue); }
-.st-card:hover img { opacity: 1; filter: brightness(1.2); } /* Prosvětlení při najetí */
-
-.st-card h3 { position: absolute; bottom: 0; width: 100%; text-align: center; background: rgba(0,0,0,0.85); margin: 0; padding: 10px 0; font-size: 0.9rem; }
+.st-card:hover img { opacity: 1; filter: brightness(1.3); }
+.st-card h3 { position: absolute; bottom: 0; width: 100%; text-align: center; background: rgba(0,0,0,0.85); margin: 0; padding: 10px 0; }
 
 .cyan { color: var(--neon-cyan); font-weight: bold; }
-.time-label { font-size: 0.65rem; opacity: 0.5; display: block; text-transform: uppercase; }
+.time-label { font-size: 0.65rem; opacity: 0.5; display: block; }
 .hidden { display: none !important; }
 .glass-btn { background: #1a242f; border: 1px solid var(--border); color: white; padding: 6px 12px; cursor: pointer; border-radius: 4px; }
-.dispatch-btn { background: var(--accent-blue); color: white; border: none; padding: 12px 30px; border-radius: 4px; font-weight: bold; cursor: pointer; }
-.full-screen { height: 100vh; display: flex; align-items: center; justify-content: center; }
+.dispatch-btn { background: var(--accent-blue); color: white; border: none; padding: 12px 30px; border-radius: 4px; cursor: pointer; }

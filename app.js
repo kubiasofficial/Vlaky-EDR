@@ -16,21 +16,16 @@ async function fetchData(url) {
     } catch (e) { return null; }
 }
 
-// Živé hodiny
+// Hodiny a vyhledávání
 setInterval(() => {
     const el = document.getElementById('clock');
     if (el) el.innerText = new Date().toLocaleTimeString('cs-CZ');
 }, 1000);
 
-// VYHLEDÁVÁNÍ
 document.getElementById('global-search').addEventListener('input', (e) => {
     lastSearchTerm = e.target.value.toLowerCase();
-    if (currentStation) {
-        updateBoardData(); // Filtruje vlaky v tabulce
-    } else {
-        const filtered = allStations.filter(st => st.Name.toLowerCase().includes(lastSearchTerm));
-        renderStations(filtered); // Filtruje mřížku stanic
-    }
+    if (currentStation) updateBoardData();
+    else renderStations(allStations.filter(st => st.Name.toLowerCase().includes(lastSearchTerm)));
 });
 
 document.getElementById('enter-dispatch').onclick = () => {
@@ -62,9 +57,8 @@ function renderStations(stations) {
 async function openBoard(name) {
     currentStation = name;
     isFirstLoad = true;
-    document.getElementById('global-search').value = ""; // Reset hledání při vstupu
+    document.getElementById('global-search').value = "";
     lastSearchTerm = "";
-    
     document.getElementById('stations-grid').classList.add('hidden');
     document.getElementById('station-view').classList.remove('hidden');
     document.getElementById('back-btn').classList.remove('hidden');
@@ -72,15 +66,12 @@ async function openBoard(name) {
     
     await updateBoardData();
     if (refreshInterval) clearInterval(refreshInterval);
-    refreshInterval = setInterval(updateBoardData, 30000);
+    refreshInterval = setInterval(updateBoardData, 15000); // Rychlejší refresh pro zpoždění
 }
 
 function getValidStation(timetable, currentIndex, direction) {
-    let searchIndex = currentIndex + direction;
-    if (searchIndex >= 0 && searchIndex < timetable.length) {
-        return timetable[searchIndex].nameForPerson;
-    }
-    return direction === -1 ? "Výchozí" : "Konečná";
+    let idx = currentIndex + direction;
+    return (idx >= 0 && idx < timetable.length) ? timetable[idx].nameForPerson : (direction === -1 ? "Výchozí" : "Konečná");
 }
 
 async function updateBoardData() {
@@ -92,12 +83,9 @@ async function updateBoardData() {
 
     if (!edr) return;
 
-    // Filtrování a řazení
     const filtered = edr.filter(t => {
         const hasStation = t.timetable.some(s => s.nameForPerson === currentStation);
-        const matchesSearch = t.trainName.toLowerCase().includes(lastSearchTerm) || 
-                              t.trainNoLocal.toString().includes(lastSearchTerm) ||
-                              t.endStation.toLowerCase().includes(lastSearchTerm);
+        const matchesSearch = t.trainName.toLowerCase().includes(lastSearchTerm) || t.trainNoLocal.toString().includes(lastSearchTerm);
         return hasStation && matchesSearch;
     }).sort((a,b) => {
         const stopA = a.timetable.find(s => s.nameForPerson === currentStation);
@@ -109,21 +97,31 @@ async function updateBoardData() {
         const stopIndex = item.timetable.findIndex(s => s.nameForPerson === currentStation);
         const stop = item.timetable[stopIndex];
         const liveTrain = liveData?.data?.find(lt => lt.TrainNoLocal === item.trainNoLocal);
-        const delay = liveTrain ? (liveTrain.TrainData?.Delay || 0) : 0;
         
+        // --- DYNAMICKÝ VÝPOČET ZPOŽDĚNÍ ---
+        let delay = liveTrain ? (liveTrain.TrainData?.Delay || 0) : 0;
         const schedArr = stop.arrivalTime ? new Date(stop.arrivalTime) : null;
         const schedDep = stop.departureTime ? new Date(stop.departureTime) : null;
-        const realDep = schedDep ? new Date(schedDep.getTime() + delay * 60000) : null;
-
+        
         let rowClass = "row-arrival";
         let statusText = "PŘIJEDE";
 
-        if (realDep && now > realDep) {
-            rowClass = "row-departed";
-            statusText = "ODJEL";
-        } else if (liveTrain && liveTrain.TrainData?.VDDelayedTimetableIndex === stop.indexOfPoint) {
+        // Kontrola stavu "VE STANICI" a dopočet zpoždění při pobytu
+        if (liveTrain && liveTrain.TrainData?.VDDelayedTimetableIndex === stop.indexOfPoint) {
             rowClass = "row-at-station";
             statusText = "VE STANICI";
+            
+            // Pokud je vlak ve stanici a už měl odjet, přičítáme zpoždění v reálném čase
+            if (schedDep) {
+                const expectedDep = new Date(schedDep.getTime() + delay * 60000);
+                if (now > expectedDep) {
+                    const extra = Math.floor((now - expectedDep) / 60000);
+                    delay += extra;
+                }
+            }
+        } else if (schedDep && now > new Date(schedDep.getTime() + delay * 60000)) {
+            rowClass = "row-departed";
+            statusText = "ODJEL";
         }
 
         body.innerHTML += `
@@ -136,7 +134,7 @@ async function updateBoardData() {
                 <div>${getValidStation(item.timetable, stopIndex, -1)}</div>
                 <div><b>${getValidStation(item.timetable, stopIndex, 1)}</b><br><small>Cíl: ${item.endStation}</small></div>
                 <div>${stop.platform || '-'}/${stop.track || '-'}</div>
-                <div style="color:${delay > 0 ? 'var(--accent-red)' : (liveTrain ? 'var(--accent-green)' : 'var(--text-dim)')}; font-weight:bold;">
+                <div style="color:${delay > 0 ? 'var(--accent-red)' : (liveTrain ? 'var(--accent-green)' : 'var(--text-dim)')}; font-weight:bold; font-size:1.1rem;">
                     ${liveTrain ? (delay !== 0 ? (delay > 0 ? '+'+delay : delay) + ' min' : 'VČAS') : 'MIMO MAPU'}
                 </div>
                 <div>${statusText}</div>
@@ -145,10 +143,7 @@ async function updateBoardData() {
 
     if (isFirstLoad && lastSearchTerm === "") {
         const firstActive = body.querySelector('.row-at-station, .row-arrival');
-        if (firstActive) {
-            firstActive.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            isFirstLoad = false;
-        }
+        if (firstActive) { firstActive.scrollIntoView({ behavior: 'smooth', block: 'center' }); isFirstLoad = false; }
     }
 }
 
