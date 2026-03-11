@@ -27,7 +27,7 @@
         <div id="stations-grid" class="grid-container"></div>
 
         <div id="station-view" class="hidden">
-            <h2 id="st-name" style="text-align: center; color: var(--neon-cyan); letter-spacing: 2px;"></h2>
+            <h2 id="st-name" style="text-align: center; color: var(--neon-cyan); letter-spacing: 2px; text-transform: uppercase;"></h2>
             <div id="table-header" class="table-header-sticky">
                 <div>Čas</div>
                 <div>Spoj</div>
@@ -40,6 +40,14 @@
             <div id="departures-body"></div>
         </div>
     </div>
+
+    <div id="board-modal" class="modal hidden">
+        <div class="modal-content">
+            <span id="close-modal" class="close">&times;</span>
+            <div id="modal-board-container"></div>
+        </div>
+    </div>
+
     <script src="app.js"></script>
 </body>
 </html>
