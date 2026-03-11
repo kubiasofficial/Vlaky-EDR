@@ -161,17 +161,37 @@ function getVehicleImagePath(vehicles) {
     if (compact.includes("EN71")) return "https://wiki.simrail.eu/vehicle/en71-002.png";
     if (compact.includes("TY2") || compact.includes("BR52")) return "https://wiki.simrail.eu/vehicle/ty2-70.png";
 
+    // Broad fallbacks so most unknown variants still get a representative image.
+    if (compact.includes("EN")) return "https://wiki.simrail.eu/vehicle/en57-009.png";
+    if (compact.includes("ED")) return "https://wiki.simrail.eu/vehicle/ed250-001.png";
+    if (compact.includes("ET")) return "https://wiki.simrail.eu/vehicle/et22-243.png";
+    if (compact.includes("EP")) return "https://wiki.simrail.eu/vehicle/ep08-001.png";
+    if (compact.includes("EU")) return "https://wiki.simrail.eu/vehicle/eu07-005.png";
+    if (compact.includes("E6ACT")) return "https://wiki.simrail.eu/vehicle/et25-002.png";
+    if (compact.includes("E186") || compact.includes("TRAXX")) return "https://wiki.simrail.eu/vehicle/e186-134.png";
+    if (compact.includes("163")) return "https://wiki.simrail.eu/vehicle/163_021-9.png";
+
     return "";
 }
 
 function getVehicleCodeLabel(vehicles) {
-    const raw = String(vehicles?.leadVehicle || "").trim();
-    if (!raw) return "?";
+    const fromLead = String(vehicles?.leadVehicle || "").trim();
+    const fromConsist = String(vehicles?.consist || "").split(",")[0].trim();
+    const raw = fromLead || fromConsist;
+    if (!raw) return "NEZNAMY";
+
     const normalized = raw.toUpperCase();
     if (normalized.includes("ED250")) return "ED250";
     if (normalized.includes("36WED")) return "36WED";
-    const token = normalized.split(/[-\s]/)[0];
-    return token || "?";
+    const token = normalized
+        .replace(/^\{/, "")
+        .replace(/\}$/, "")
+        .replace(/^[^A-Z0-9]+/, "")
+        .split(/[\s,:]/)[0]
+        .split("/")
+        .pop();
+
+    return token || "NEZNAMY";
 }
 
 function getTrainClassCode(trainName) {
@@ -505,7 +525,7 @@ function renderTable(liveData, posData) {
                 <div class="cell vehicle-cell" data-label="Vozidlo">
                     <span class="vehicle-orb ${vehicleImagePath ? "has-image" : "no-image"}">
                         ${vehicleImagePath
-                            ? `<img src="${escapeHtml(vehicleImagePath)}" alt="${escapeHtml(vehicleCodeLabel)}">`
+                            ? `<img src="${escapeHtml(vehicleImagePath)}" alt="${escapeHtml(vehicleCodeLabel)}" onerror="this.onerror=null;this.src='grafika/eu07-005.png';">`
                             : `<span>${escapeHtml(vehicleCodeLabel)}</span>`}
                     </span>
                     <span class="vehicle-caption">${escapeHtml(classCode)} ${escapeHtml(String(item.trainNoLocal || ""))}</span>
