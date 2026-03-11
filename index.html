@@ -3,18 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SimRail Dispečer 2026 | CZ1 Professional</title>
+    <title>SimRail Dispečer CZ1 | Professional</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div id="home-screen">
         <div class="overlay">
             <div class="welcome-box">
-                <h1 style="font-size: 3rem; margin-bottom: 20px; color: white; text-shadow: 2px 2px 10px rgba(0,0,0,0.5);">SimRail CZ1</h1>
+                <h1 class="glow-text">SimRail CZ1</h1>
                 <div class="search-main">
-                    <input type="text" id="station-search" placeholder="Hledat stanici (např. Koluszki)...">
-                    <div style="margin: 15px 0; color: #aaa;">— NEBO HLEDAT ČÍSLO VLAKU —</div>
-                    <input type="text" id="train-global-search" placeholder="Zadejte číslo vlaku...">
+                    <input type="text" id="station-search" placeholder="Hledat stanici (např. Koluszki)..." autocomplete="off">
+                    <div class="search-divider">— NEBO HLEDAT ČÍSLO VLAKU —</div>
+                    <input type="text" id="train-global-search" placeholder="Zadejte číslo vlaku..." autocomplete="off">
                 </div>
                 <div id="global-train-result" class="hidden"></div>
                 <div id="stations-grid" class="grid-container"></div>
@@ -30,13 +30,13 @@
                     <h2 id="st-name">NÁZEV STANICE</h2>
                 </div>
                 <div class="header-tools">
-                    <button id="view-toggle" class="glass-btn">TABULE</button>
+                    <button id="view-toggle" class="glass-btn">RETRO TABULE</button>
                     <button id="announcement-btn" class="glass-btn">HLÁŠENÍ</button>
                 </div>
                 <div id="clock">00:00:00</div>
             </header>
             <div id="table-header">
-                <div>Čas</div><div>Spoj</div><div>Odkud</div><div>Cíl</div><div>Nást.</div><div>Zpoždění</div><div>Stav</div>
+                <div>Čas</div><div>Spoj</div><div>Odkud</div><div>Cílová stanice</div><div>Nást./Kol.</div><div>Zpoždění</div><div>Stav</div>
             </div>
         </div>
         <main id="station-view">
@@ -44,24 +44,22 @@
         </main>
     </div>
 
-    <div id="board-modal" class="modal hidden">
-        <div class="modal-content retro-modal">
-            <span class="close" id="close-board">&times;</span>
-            <div id="modal-board-container"></div>
-        </div>
-    </div>
-
     <div id="announcement-modal" class="modal hidden">
         <div class="modal-content ann-modal">
             <span class="close" id="close-ann">&times;</span>
-            <h2 style="color: var(--accent-green);">STANIČNÍ ROZHLAS</h2>
-            <div class="ann-controls" style="text-align: center; margin-bottom: 20px;">
-                <button id="auto-ann-toggle" class="glass-btn" style="width: 100%; padding: 15px;">AUTOMATICKÉ HLÁŠENÍ: VYPNUTO</button>
-            </div>
+            <h2 style="color: var(--accent-green); text-align:center;">STANIČNÍ ROZHLAS</h2>
+            <button id="auto-ann-toggle" class="glass-btn" style="width:100%; margin-bottom:20px; padding:15px;">AUTOMATICKÉ HLÁŠENÍ: VYPNUTO</button>
             <div class="ann-columns">
                 <div class="ann-col"><h3>PŘÍJEZDY</h3><div id="arrivals-queue"></div></div>
                 <div class="ann-col"><h3>ODJEZDY</h3><div id="departures-queue"></div></div>
             </div>
+        </div>
+    </div>
+
+    <div id="board-modal" class="modal hidden">
+        <div class="modal-content retro-modal">
+            <span class="close" id="close-board">&times;</span>
+            <div id="modal-board-container"></div>
         </div>
     </div>
 
