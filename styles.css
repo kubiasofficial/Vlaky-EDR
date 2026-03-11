@@ -532,7 +532,11 @@ body::after {
 
 .retro-modal {
     color: #ffd96a;
-    font-family: Consolas, monospace;
+    font-family: "Bahnschrift", "Arial Narrow", Consolas, monospace;
+    border-color: rgba(91, 132, 255, 0.36);
+    background:
+        radial-gradient(circle at 15% 8%, rgba(96, 152, 255, 0.28), transparent 28%),
+        linear-gradient(180deg, #101b3e 0%, #0a1128 42%, #070d1c 100%);
 }
 
 .close {
@@ -546,37 +550,112 @@ body::after {
 
 .retro-board {
     display: grid;
-    gap: 10px;
+    gap: 8px;
+    padding: 12px;
+    border: 1px solid rgba(124, 171, 255, 0.45);
+    border-radius: 12px;
+    background: rgba(5, 10, 26, 0.75);
+    box-shadow: inset 0 0 26px rgba(91, 146, 255, 0.18);
 }
 
-.retro-board-head,
+.retro-board-topline,
 .retro-board-grid {
     display: grid;
-    grid-template-columns: 0.8fr 1.2fr 1.4fr 0.8fr 0.8fr 0.8fr;
+    grid-template-columns: 0.9fr 1.35fr 1.4fr 0.8fr 0.75fr 0.9fr;
     gap: 12px;
     align-items: center;
 }
 
-.retro-board-head {
-    padding-bottom: 10px;
-    border-bottom: 1px solid rgba(255, 200, 107, 0.2);
-    letter-spacing: 0.1em;
+.retro-board-topline {
+    padding: 8px 10px 12px;
+    border-bottom: 1px solid rgba(255, 211, 101, 0.38);
+    color: #ffd45d;
+    letter-spacing: 0.06em;
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.retro-route-title {
+    grid-column: 1 / span 2;
+    font-style: italic;
+}
+
+.retro-route-title span {
+    opacity: 0.92;
+    margin-left: 10px;
+}
+
+.retro-station-name {
+    grid-column: 3 / span 2;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.retro-clock {
+    grid-column: 6;
+    justify-self: end;
+    min-width: 72px;
+    text-align: right;
 }
 
 .retro-board-grid {
-    padding: 12px 0;
-    border-bottom: 1px solid rgba(255, 200, 107, 0.08);
+    padding: 10px 10px;
+    border: 1px solid rgba(85, 125, 236, 0.42);
+    border-radius: 4px;
+    background:
+        linear-gradient(180deg, rgba(61, 115, 255, 0.92), rgba(45, 88, 225, 0.94));
+    color: #eef4ff;
+    text-shadow: 0 0 8px rgba(255, 255, 255, 0.14);
 }
 
 .retro-row-departing {
-    color: #fff0b7;
+    color: #fff4cd;
     animation: retroBlink 1s steps(2, end) infinite;
 }
 
 .retro-board-grid-head {
-    color: #c8aa44;
-    font-size: 0.84rem;
+    color: #ffe18a;
+    font-size: 0.76rem;
+    border-color: rgba(255, 215, 109, 0.2);
+    background: rgba(14, 26, 58, 0.95);
     text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.retro-time-cell,
+.retro-platform-cell,
+.retro-delay-cell,
+.retro-status-cell {
+    font-weight: 700;
+}
+
+.retro-train-cell {
+    min-width: 0;
+}
+
+.retro-train-cell strong {
+    display: block;
+    font-size: 1rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.retro-train-cell span {
+    display: block;
+    margin-top: 2px;
+    font-size: 0.72rem;
+    opacity: 0.86;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.retro-dir-cell {
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 #loading-spinner {
@@ -654,9 +733,15 @@ body::after {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
-    .retro-board-head,
+    .retro-board-topline,
     .retro-board-grid {
         grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .retro-route-title,
+    .retro-station-name,
+    .retro-clock {
+        grid-column: auto;
     }
 }
 
@@ -706,7 +791,7 @@ body::after {
         grid-template-columns: 1fr 1fr;
     }
 
-    .retro-board-head,
+    .retro-board-topline,
     .retro-board-grid {
         grid-template-columns: 1fr 1fr;
     }

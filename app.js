@@ -48,7 +48,9 @@ let lastRenderedTrains = [];
 let lastLiveData = null;
 let lastStationRows = [];
 
-const PASSENGER_TRAIN_TAGS = ["EIP", "EIC", "EC", "EN", "IC", "TLK", "IR", "R", "RE", "RJ", "OS", "SKM", "KM", "KD", "KS", "PR"];
+const RETRO_MAX_ROWS = 8;
+const RETRO_PAST_WINDOW_MIN = 8;
+const RETRO_FUTURE_WINDOW_MIN = 120;
 
 function showLoading() {
     if (document.getElementById("loading-spinner")) return;
@@ -115,15 +117,17 @@ function getApiHint() {
     return ' Na localhostu spusť také proxy přes příkaz: node proxy.js';
 }
 
-function hasPlatformStop(stop) {
-    const platform = String(stop?.platform ?? "").trim();
-    return platform && platform !== "-" && platform !== "0";
+function getStopPlanDate(stop) {
+    return new Date(stop?.departureTime || stop?.arrivalTime || 0);
 }
 
-function isPassengerTrain(train) {
-    const trainName = String(train?.trainName ?? "").toUpperCase();
-    const prefix = trainName.split(/\s+/)[0] || "";
-    return PASSENGER_TRAIN_TAGS.includes(prefix);
+function isRetroCandidate(row) {
+    if (row.live) {
+        return row.currentIndex >= row.stop.indexOfPoint - 1 && row.currentIndex <= row.stop.indexOfPoint + 1;
+    }
+    const now = Date.now();
+    const plan = getStopPlanDate(row.stop).getTime();
+    return plan >= now - RETRO_PAST_WINDOW_MIN * 60 * 1000 && plan <= now + RETRO_FUTURE_WINDOW_MIN * 60 * 1000;
 }
 
 function collectStationRows(liveData) {
@@ -134,23 +138,20 @@ function collectStationRows(liveData) {
         .map((train) => {
             const stop = train.timetable.find((entry) => norm(entry.nameForPerson).includes(target));
             if (!stop) return null;
-            if (!isPassengerTrain(train) || !hasPlatformStop(stop)) return null;
 
             const live = liveData?.data?.find((entry) => entry.TrainNoLocal === train.trainNoLocal);
-            if (!live) return null;
+            const currentIndex = live?.TrainData?.VDDelayedTimetableIndex ?? -1;
+            const plannedTime = getStopPlanDate(stop).getTime();
 
-            const currentIndex = live.TrainData?.VDDelayedTimetableIndex ?? -1;
-
-            // Keep only trains that are approaching, at station, or just departing.
-            if (currentIndex > stop.indexOfPoint + 1) return null;
-
-            return { train, stop, live, currentIndex };
+            return { train, stop, live, currentIndex, plannedTime };
         })
         .filter(Boolean)
         .sort((first, second) => {
-            const firstDate = new Date(first.stop?.departureTime || first.stop?.arrivalTime || 0);
-            const secondDate = new Date(second.stop?.departureTime || second.stop?.arrivalTime || 0);
-            return firstDate - secondDate;
+            const now = Date.now();
+            const firstIsPast = first.plannedTime < now;
+            const secondIsPast = second.plannedTime < now;
+            if (firstIsPast !== secondIsPast) return firstIsPast ? 1 : -1;
+            return first.plannedTime - second.plannedTime;
         });
 }
 
@@ -186,27 +187,30 @@ function updateKpis(rows) {
 }
 
 function renderRetroBoard() {
-    if (!currentStation || !lastStationRows.length) {
+    const retroRows = lastStationRows.filter(isRetroCandidate).slice(0, RETRO_MAX_ROWS);
+
+    if (!currentStation || !retroRows.length) {
         elements.boardContainer.innerHTML = '<div class="retro-empty">Retro tabule je dostupná po otevření stanice s daty.</div>';
         return;
     }
 
     elements.boardContainer.innerHTML = `
         <div class="retro-board">
-            <div class="retro-board-head">
-                <span>SIMRAIL CZ1</span>
-                <span>${escapeHtml(currentStation.toUpperCase())}</span>
-                <span>${new Date().toLocaleTimeString("cs-CZ")}</span>
+            <div class="retro-board-topline">
+                <div class="retro-route-title">Odjezdy <span>Departures</span></div>
+                <div class="retro-station-name">${escapeHtml(currentStation.toUpperCase())}</div>
+                <div class="retro-clock">${new Date().toLocaleTimeString("cs-CZ", { hour: "2-digit", minute: "2-digit" })}</div>
             </div>
             <div class="retro-board-grid retro-board-grid-head">
-                <div>Čas</div><div>Spoj</div><div>Směr</div><div>Nást.</div><div>Zpoždění</div><div>Stav</div>
+                <div>Čas</div><div>Vlak</div><div>Směr</div><div>Nástupiště</div><div>Zpoždění</div><div>Stav</div>
             </div>
-            ${lastStationRows.slice(0, 8).map((row) => {
+            ${retroRows.map((row) => {
                 const item = row.train;
                 const stop = row.stop;
                 const live = row.live;
                 const currentIndex = row.currentIndex;
                 const delay = live?.TrainData?.Delay || 0;
+                const origin = getCleanName(item.timetable, item.timetable.indexOf(stop), -1);
                 let status = "PŘIJEDE";
                 let retroRowClass = "";
                 if (currentIndex === stop?.indexOfPoint) status = "VE STANICI";
@@ -216,12 +220,15 @@ function renderRetroBoard() {
                 }
                 return `
                     <div class="retro-board-grid ${retroRowClass}">
-                        <div>${fmt(stop?.departureTime || stop?.arrivalTime)}</div>
-                        <div>${escapeHtml(item.trainName)} ${escapeHtml(item.trainNoLocal)}</div>
-                        <div>${escapeHtml(item.endStation || "-")}</div>
-                        <div>${escapeHtml(stop?.platform || "-")}/${escapeHtml(stop?.track || "-")}</div>
-                        <div>+${delay}</div>
-                        <div>${status}</div>
+                        <div class="retro-time-cell">${fmt(stop?.departureTime || stop?.arrivalTime)}</div>
+                        <div class="retro-train-cell">
+                            <strong>${escapeHtml(item.trainName)} ${escapeHtml(item.trainNoLocal)}</strong>
+                            <span>${escapeHtml(origin)}</span>
+                        </div>
+                        <div class="retro-dir-cell">${escapeHtml(item.endStation || "-")}</div>
+                        <div class="retro-platform-cell">${escapeHtml(stop?.platform || "-")}/${escapeHtml(stop?.track || "-")}</div>
+                        <div class="retro-delay-cell">+${delay}</div>
+                        <div class="retro-status-cell">${status}</div>
                     </div>
                 `;
             }).join("")}
@@ -239,7 +246,7 @@ function renderTable(liveData, posData) {
     lastLiveData = liveData;
 
     if (!rows.length) {
-        elements.departuresBody.innerHTML = '<div class="empty-panel">Pro tuto stanici nejsou dostupné žádné živé osobní spoje u nástupiště.</div>';
+        elements.departuresBody.innerHTML = '<div class="empty-panel">Pro tuto stanici nejsou v EDR dostupné žádné spoje.</div>';
         updateKpis([]);
         return;
     }
