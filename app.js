@@ -6,7 +6,7 @@ const API_EDR = `/api-aws/getEDRTimetables?serverCode=${SERVER}`;
 
 let allStations = [], cachedEDR = null, currentStation = null;
 let delayHistory = {}, expandedTrains = new Set();
-let isFirstLoad = true, isAutoAnnounce = false, announcementQueue = [], isSpeaking = false, announcedTrains = new Set();
+let isFirstLoad = true;
 
 function norm(str) {
     if (!str) return "";
@@ -88,14 +88,13 @@ function renderTable(liveData, posData) {
 
         const isExp = expandedTrains.has(item.trainNoLocal.toString());
         
-        // OPRAVENO: Tady byla chyba, přidal jsem ${item.trainNoLocal} zpět do výpisu
         html += `
             <div class="train-row ${rowClass}" onclick="toggleTrain('${item.trainNoLocal}')">
                 <div>${stop.arrivalTime ? fmt(stop.arrivalTime) : '--:--'}<br><span style="color:var(--neon-cyan)">${stop.departureTime ? fmt(stop.departureTime) : '--:--'}</span></div>
                 <div><b>${item.trainName} ${item.trainNoLocal}</b></div>
                 <div>${getCleanName(item.timetable, item.timetable.indexOf(stop), -1)}</div>
                 <div><b>${item.endStation}</b></div>
-                <div>${stop.platform || '-'}/${stop.track || '-'}</div>
+                <div>${stop.platform || '-'}/${stop.track || '-'}</div>
                 <div style="color:${delay > 0 ? 'var(--accent-red)' : 'var(--accent-green)'}">+${delay} min</div>
                 <div><b>${status}</b></div>
             </div>
@@ -118,7 +117,7 @@ function renderTable(liveData, posData) {
         if (act) act.scrollIntoView({ behavior: 'smooth', block: 'center' });
         isFirstLoad = false;
     }
-    updateAnnUI();
+    // updateAnnUI odstraněno
 }
 
 function toggleTrain(id) {
@@ -138,35 +137,8 @@ function getCleanName(tt, idx, dir) {
     return dir === -1 ? "Výchozí" : "Cíl";
 }
 
-// --- HLÁŠENÍ ---
-function announce(txt) {
-    if (!txt) return; announcementQueue.push(txt);
-    if (!isSpeaking) processQueue();
-}
-function processQueue() {
-    if (announcementQueue.length === 0) { isSpeaking = false; return; }
-    isSpeaking = true; const msg = new SpeechSynthesisUtterance(announcementQueue.shift());
-    msg.lang = 'cs-CZ'; msg.onend = () => setTimeout(processQueue, 1000);
-    window.speechSynthesis.speak(msg);
-}
-
-function updateAnnUI() {
-    const arrC = document.getElementById('arrivals-queue'), depC = document.getElementById('departures-queue');
-    if (!arrC || !window.lastTrains) return; arrC.innerHTML = ""; depC.innerHTML = "";
-    window.lastTrains.forEach(t => {
-        const stop = t.timetable.find(s => norm(s.nameForPerson).includes(norm(currentStation)));
-        const live = window.lastLive?.data?.find(l => l.TrainNoLocal === t.trainNoLocal);
-        if(!live) return;
-        const isAt = live.TrainData.VDDelayedTimetableIndex === stop.indexOfPoint;
-        const isApp = live.TrainData.VDDelayedTimetableIndex === stop.indexOfPoint - 1;
-        if(isApp || isAt) arrC.innerHTML += `<div class="ann-item">${t.trainName} ${t.trainNoLocal} <button class="glass-btn" onclick="announce('Vlak ${t.trainName} číslo ${t.trainNoLocal} přijede k nástupišti ${stop.platform}.')">🔊</button></div>`;
-        if(isAt) depC.innerHTML += `<div class="ann-item">${t.trainName} ${t.trainNoLocal} <button class="glass-btn" onclick="announce('Vlak ${t.trainName} číslo ${t.trainNoLocal} je připraven k odjezdu.')">🔊</button></div>`;
-    });
-}
-
 document.getElementById('announcement-btn').onclick = () => document.getElementById('announcement-modal').classList.remove('hidden');
 document.getElementById('close-ann').onclick = () => document.getElementById('announcement-modal').classList.add('hidden');
 document.getElementById('auto-ann-toggle').onclick = function() {
-    isAutoAnnounce = !isAutoAnnounce; this.innerText = `AUTOMATICKÉ HLÁŠENÍ: ${isAutoAnnounce ? 'ZAPNUTO' : 'VYPNUTO'}`;
-    this.classList.toggle('active');
+    document.getElementById('announcement-modal').classList.toggle('hidden');
 };
