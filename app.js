@@ -148,16 +148,18 @@ function getVehicleImagePath(vehicles) {
     const haystack = `${vehicles?.leadVehicle || ""} ${vehicles?.consist || ""}`.toUpperCase();
     const compact = haystack.replace(/[^A-Z0-9]/g, "");
 
-    if (compact.includes("36WED")) return "grafika/36wed-001.png";
-    if (compact.includes("E6ACTA") || compact.includes("DRAGON2")) return "grafika/e6acta-016.png";
-    if (compact.includes("ET22")) return "grafika/et22-836.png";
-    if (compact.includes("EU07") || compact.includes("EP07") || compact.includes("4E")) return "grafika/eu07-005.png";
-    if (compact.includes("EP08")) return "grafika/ep08-001.png";
-    if (compact.includes("163")) return "grafika/163_021-9.png";
-    if (compact.includes("E186")) return "grafika/e186-134.png";
-    if (compact.includes("ED250")) return "grafika/ed250-018.png";
-    if (compact.includes("EN76") || compact.includes("EN96") || compact.includes("ELF")) return "grafika/en76-006.png";
-    if (compact.includes("EN57") || compact.includes("EN71")) return "grafika/en57-1000.png";
+    if (compact.includes("36WED")) return "https://wiki.simrail.eu/vehicle/poland/trains/elec-multiple-unit/impuls2/20260224104216_1.jpg";
+    if (compact.includes("E6ACTA") || compact.includes("DRAGON2") || compact.includes("ET25")) return "https://wiki.simrail.eu/vehicle/et25-002.png";
+    if (compact.includes("ET22")) return "https://wiki.simrail.eu/vehicle/et22-243.png";
+    if (compact.includes("EU07") || compact.includes("EP07") || compact.includes("4E")) return "https://wiki.simrail.eu/vehicle/eu07-005.png";
+    if (compact.includes("EP08")) return "https://wiki.simrail.eu/vehicle/ep08-001.png";
+    if (compact.includes("163") || compact.includes("71E")) return "https://wiki.simrail.eu/vehicle/163_021-9.png";
+    if (compact.includes("E186") || compact.includes("TRAXX") || compact.includes("EU43")) return "https://wiki.simrail.eu/vehicle/e186-134.png";
+    if (compact.includes("ED250") || compact.includes("PENDOLINO")) return "https://wiki.simrail.eu/vehicle/ed250-001.png";
+    if (compact.includes("EN76") || compact.includes("EN96") || compact.includes("ELF")) return "https://wiki.simrail.eu/vehicle/en76-006.png";
+    if (compact.includes("EN57")) return "https://wiki.simrail.eu/vehicle/en57-009.png";
+    if (compact.includes("EN71")) return "https://wiki.simrail.eu/vehicle/en71-002.png";
+    if (compact.includes("TY2") || compact.includes("BR52")) return "https://wiki.simrail.eu/vehicle/ty2-70.png";
 
     return "";
 }
