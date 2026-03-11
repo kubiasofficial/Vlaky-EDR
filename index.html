@@ -13,8 +13,8 @@
                 <h1>SimRail CZ1</h1>
                 <div class="search-main">
                     <input type="text" id="station-search" placeholder="Hledat stanici (např. Koluszki)...">
-                    <div class="search-divider">— NEBO HLEDAT ČÍSLO VLAKU —</div>
-                    <input type="text" id="train-global-search" placeholder="Zadejte číslo vlaku (např. 14010)...">
+                    <div style="margin: 15px 0; color: #8a96a3;">— NEBO HLEDAT ČÍSLO VLAKU —</div>
+                    <input type="text" id="train-global-search" placeholder="Zadejte číslo vlaku...">
                 </div>
                 <div id="global-train-result" class="hidden"></div>
                 <div id="stations-grid" class="grid-container"></div>
@@ -25,14 +25,9 @@
     <div id="main-content" class="hidden">
         <div class="sticky-wrapper">
             <header class="main-header">
-                <button id="back-btn" class="glass-btn">← ZPĚT</button>
+                <button id="back-btn" class="glass-btn" onclick="location.reload()">← ZPĚT</button>
                 <div id="header-center">
                     <h2 id="st-name">NÁZEV STANICE</h2>
-                    <input type="text" id="local-search" placeholder="Filtr vlaků v této stanici...">
-                </div>
-                <div class="header-tools">
-                    <button id="view-toggle" class="glass-btn">TABULE</button>
-                    <button id="announcement-btn" class="glass-btn">HLÁŠENÍ</button>
                 </div>
                 <div id="clock">00:00:00</div>
             </header>
@@ -40,19 +35,10 @@
                 <div>Čas příj./odj.</div><div>Spoj</div><div>Odkud</div><div>Kam / Cíl</div><div>Nást./Kol.</div><div>Zpoždění</div><div>Stav</div>
             </div>
         </div>
-
         <main id="station-view">
             <div id="departures-body"></div>
         </main>
     </div>
-
-    <div id="board-modal" class="modal hidden">
-        <div class="modal-content">
-            <span class="close" onclick="closeModal('board-modal')">&times;</span>
-            <div id="modal-board-container"></div>
-        </div>
-    </div>
-
     <script src="app.js"></script>
 </body>
 </html>
