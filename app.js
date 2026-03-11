@@ -24,8 +24,6 @@ const elements = {
     mainContent: document.getElementById("main-content"),
     stationsGrid: document.getElementById("stations-grid"),
     stationSearch: document.getElementById("station-search"),
-    trainSearch: document.getElementById("train-global-search"),
-    trainResult: document.getElementById("global-train-result"),
     stationName: document.getElementById("st-name"),
     departuresBody: document.getElementById("departures-body"),
     backBtn: document.getElementById("back-btn"),
@@ -48,6 +46,9 @@ let refreshTimer = null;
 let activeRequestId = 0;
 let lastRenderedTrains = [];
 let lastLiveData = null;
+let lastStationRows = [];
+
+const PASSENGER_TRAIN_TAGS = ["EIP", "EIC", "EC", "EN", "IC", "TLK", "IR", "R", "RE", "RJ", "OS", "SKM", "KM", "KD", "KS", "PR"];
 
 function showLoading() {
     if (document.getElementById("loading-spinner")) return;
@@ -114,6 +115,45 @@ function getApiHint() {
     return ' Na localhostu spusť také proxy přes příkaz: node proxy.js';
 }
 
+function hasPlatformStop(stop) {
+    const platform = String(stop?.platform ?? "").trim();
+    return platform && platform !== "-" && platform !== "0";
+}
+
+function isPassengerTrain(train) {
+    const trainName = String(train?.trainName ?? "").toUpperCase();
+    const prefix = trainName.split(/\s+/)[0] || "";
+    return PASSENGER_TRAIN_TAGS.includes(prefix);
+}
+
+function collectStationRows(liveData) {
+    const target = norm(currentStation);
+    if (!target) return [];
+
+    return cachedEDR
+        .map((train) => {
+            const stop = train.timetable.find((entry) => norm(entry.nameForPerson).includes(target));
+            if (!stop) return null;
+            if (!isPassengerTrain(train) || !hasPlatformStop(stop)) return null;
+
+            const live = liveData?.data?.find((entry) => entry.TrainNoLocal === train.trainNoLocal);
+            if (!live) return null;
+
+            const currentIndex = live.TrainData?.VDDelayedTimetableIndex ?? -1;
+
+            // Keep only trains that are approaching, at station, or just departing.
+            if (currentIndex > stop.indexOfPoint + 1) return null;
+
+            return { train, stop, live, currentIndex };
+        })
+        .filter(Boolean)
+        .sort((first, second) => {
+            const firstDate = new Date(first.stop?.departureTime || first.stop?.arrivalTime || 0);
+            const secondDate = new Date(second.stop?.departureTime || second.stop?.arrivalTime || 0);
+            return firstDate - secondDate;
+        });
+}
+
 function renderStationGrid(stations) {
     if (!stations.length) {
         elements.stationsGrid.innerHTML = '<div class="empty-state">Žádná stanice nenalezena.</div>';
@@ -121,57 +161,24 @@ function renderStationGrid(stations) {
     }
 
     elements.stationsGrid.innerHTML = stations
-        .map((station) => `<button type="button" class="st-card" data-station="${escapeHtml(station.Name)}">${escapeHtml(station.Name)}</button>`)
+        .map((station) => {
+            const initials = station.Name.split(/\s+/).filter(Boolean).slice(0, 2).map((word) => word[0]).join("").toUpperCase();
+            return `
+                <button type="button" class="st-card" data-station="${escapeHtml(station.Name)}">
+                    <span class="st-card-media" aria-hidden="true">${escapeHtml(initials || "ST")}</span>
+                    <span class="st-card-title">${escapeHtml(station.Name)}</span>
+                </button>
+            `;
+        })
         .join("");
 }
 
-function renderHomeTrainSearch(results, liveData) {
-    if (!results.length) {
-        elements.trainResult.innerHTML = '<div class="search-card empty-state">Žádný vlak nenalezen.</div>';
-        elements.trainResult.classList.remove("hidden");
-        return;
-    }
+function updateKpis(rows) {
+    const activeCount = rows.length;
 
-    elements.trainResult.innerHTML = results.slice(0, 6).map((train) => {
-        const live = liveData?.data?.find((item) => item.TrainNoLocal === train.trainNoLocal);
-        const delay = live?.TrainData?.Delay || 0;
-        const index = live?.TrainData?.VDDelayedTimetableIndex ?? 0;
-        const currentStop = train.timetable.find((stop) => stop.indexOfPoint >= index) || train.timetable[train.timetable.length - 1];
-        return `
-            <button type="button" class="search-card" data-open-station="${escapeHtml(currentStop?.nameForPerson || train.startStation || "")}">
-                <div>
-                    <strong>${escapeHtml(train.trainName)} ${escapeHtml(train.trainNoLocal)}</strong>
-                    <span>${escapeHtml(train.startStation || "?")} → ${escapeHtml(train.endStation || "?")}</span>
-                </div>
-                <div class="search-card-meta">
-                    <span>${escapeHtml(currentStop?.nameForPerson || "Neznámá poloha")}</span>
-                    <b class="${delay > 0 ? "delay-high" : "delay-ok"}">+${delay} min</b>
-                </div>
-            </button>
-        `;
-    }).join("");
+    const stationCount = rows.filter((row) => row.currentIndex === row.stop.indexOfPoint).length;
 
-    elements.trainResult.classList.remove("hidden");
-}
-
-function updateKpis(trains) {
-    const activeCount = trains.filter((item) => {
-        const live = lastLiveData?.data?.find((entry) => entry.TrainNoLocal === item.trainNoLocal);
-        const stop = item.timetable.find((entry) => norm(entry.nameForPerson).includes(norm(currentStation)));
-        const currentIndex = live?.TrainData?.VDDelayedTimetableIndex ?? -1;
-        return stop && currentIndex <= stop.indexOfPoint + 1;
-    }).length;
-
-    const stationCount = trains.filter((item) => {
-        const live = lastLiveData?.data?.find((entry) => entry.TrainNoLocal === item.trainNoLocal);
-        const stop = item.timetable.find((entry) => norm(entry.nameForPerson).includes(norm(currentStation)));
-        return stop && live?.TrainData?.VDDelayedTimetableIndex === stop.indexOfPoint;
-    }).length;
-
-    const maxDelay = trains.reduce((maximum, item) => {
-        const live = lastLiveData?.data?.find((entry) => entry.TrainNoLocal === item.trainNoLocal);
-        return Math.max(maximum, live?.TrainData?.Delay || 0);
-    }, 0);
+    const maxDelay = rows.reduce((maximum, row) => Math.max(maximum, row.live?.TrainData?.Delay || 0), 0);
 
     elements.kpiActive.textContent = String(activeCount);
     elements.kpiStation.textContent = String(stationCount);
@@ -179,7 +186,7 @@ function updateKpis(trains) {
 }
 
 function renderRetroBoard() {
-    if (!currentStation || !lastRenderedTrains.length) {
+    if (!currentStation || !lastStationRows.length) {
         elements.boardContainer.innerHTML = '<div class="retro-empty">Retro tabule je dostupná po otevření stanice s daty.</div>';
         return;
     }
@@ -194,17 +201,21 @@ function renderRetroBoard() {
             <div class="retro-board-grid retro-board-grid-head">
                 <div>Čas</div><div>Spoj</div><div>Směr</div><div>Nást.</div><div>Zpoždění</div><div>Stav</div>
             </div>
-            ${lastRenderedTrains.slice(0, 18).map((item) => {
-                const stop = item.timetable.find((entry) => norm(entry.nameForPerson).includes(norm(currentStation)));
-                const live = lastLiveData?.data?.find((entry) => entry.TrainNoLocal === item.trainNoLocal);
-                const currentIndex = live?.TrainData?.VDDelayedTimetableIndex ?? -1;
+            ${lastStationRows.slice(0, 8).map((row) => {
+                const item = row.train;
+                const stop = row.stop;
+                const live = row.live;
+                const currentIndex = row.currentIndex;
                 const delay = live?.TrainData?.Delay || 0;
                 let status = "PŘIJEDE";
+                let retroRowClass = "";
                 if (currentIndex === stop?.indexOfPoint) status = "VE STANICI";
-                else if (currentIndex === (stop?.indexOfPoint ?? -1) + 1) status = "ODJÍŽDÍ";
-                else if (currentIndex > (stop?.indexOfPoint ?? 9999)) status = "ODJEL";
+                else if (currentIndex === (stop?.indexOfPoint ?? -1) + 1) {
+                    status = "ODJÍŽDÍ";
+                    retroRowClass = "retro-row-departing";
+                }
                 return `
-                    <div class="retro-board-grid">
+                    <div class="retro-board-grid ${retroRowClass}">
                         <div>${fmt(stop?.departureTime || stop?.arrivalTime)}</div>
                         <div>${escapeHtml(item.trainName)} ${escapeHtml(item.trainNoLocal)}</div>
                         <div>${escapeHtml(item.endStation || "-")}</div>
@@ -221,31 +232,26 @@ function renderRetroBoard() {
 function renderTable(liveData, posData) {
     if (!currentStation || !cachedEDR.length) return;
 
-    const target = norm(currentStation);
-    const trains = cachedEDR
-        .filter((train) => train.timetable.some((stop) => norm(stop.nameForPerson).includes(target)))
-        .sort((first, second) => {
-            const firstStop = first.timetable.find((stop) => norm(stop.nameForPerson).includes(target));
-            const secondStop = second.timetable.find((stop) => norm(stop.nameForPerson).includes(target));
-            return new Date(firstStop?.departureTime || firstStop?.arrivalTime || 0) - new Date(secondStop?.departureTime || secondStop?.arrivalTime || 0);
-        });
+    const rows = collectStationRows(liveData);
 
-    lastRenderedTrains = trains;
+    lastStationRows = rows;
+    lastRenderedTrains = rows.map((row) => row.train);
     lastLiveData = liveData;
 
-    if (!trains.length) {
-        elements.departuresBody.innerHTML = '<div class="empty-panel">Pro tuto stanici nebyly nalezeny žádné spoje.</div>';
+    if (!rows.length) {
+        elements.departuresBody.innerHTML = '<div class="empty-panel">Pro tuto stanici nejsou dostupné žádné živé osobní spoje u nástupiště.</div>';
         updateKpis([]);
         return;
     }
 
-    elements.departuresBody.innerHTML = trains.map((item) => {
-        const stop = item.timetable.find((entry) => norm(entry.nameForPerson).includes(target));
-        const live = liveData?.data?.find((entry) => entry.TrainNoLocal === item.trainNoLocal);
+    elements.departuresBody.innerHTML = rows.map((row) => {
+        const item = row.train;
+        const stop = row.stop;
+        const live = row.live;
         const position = posData?.data?.find((entry) => entry.id === live?.Id);
         const speed = position ? Math.round(position.Velocity) : 0;
         const delay = live?.TrainData?.Delay || 0;
-        const currentIndex = live?.TrainData?.VDDelayedTimetableIndex ?? -1;
+        const currentIndex = row.currentIndex;
         let status = "PŘIJEDE";
         let rowClass = "";
 
@@ -255,9 +261,6 @@ function renderTable(liveData, posData) {
         } else if (currentIndex === stop.indexOfPoint + 1) {
             status = "ODJÍŽDÍ";
             rowClass = "row-departing";
-        } else if (currentIndex > stop.indexOfPoint) {
-            status = "ODJEL";
-            rowClass = "row-departed";
         }
 
         const isExpanded = expandedTrains.has(String(item.trainNoLocal));
@@ -290,7 +293,11 @@ function renderTable(liveData, posData) {
         `;
     }).join("");
 
-    updateKpis(trains);
+    updateKpis(rows);
+
+    if (!elements.boardModal.classList.contains("hidden")) {
+        renderRetroBoard();
+    }
 
     if (isFirstLoad) {
         const activeRow = elements.departuresBody.querySelector(".row-at-station") || elements.departuresBody.querySelector(".row-departing") || elements.departuresBody.querySelector(".train-row:not(.row-departed)");
@@ -352,21 +359,6 @@ async function openBoard(stationName) {
     await updateLoop();
 }
 
-async function handleTrainSearch() {
-    const query = elements.trainSearch.value.trim();
-    if (!query) {
-        elements.trainResult.classList.add("hidden");
-        elements.trainResult.innerHTML = "";
-        return;
-    }
-
-    const normalized = norm(query);
-    const results = cachedEDR.filter((train) => String(train.trainNoLocal).includes(query) || norm(train.trainName).includes(normalized));
-    let liveData = lastLiveData;
-    if (!liveData) liveData = await fetchData(API_TRAINS);
-    renderHomeTrainSearch(results, liveData);
-}
-
 function bindEvents() {
     elements.stationSearch.addEventListener("input", (event) => {
         const value = norm(event.target.value);
@@ -374,16 +366,9 @@ function bindEvents() {
         renderStationGrid(filtered);
     });
 
-    elements.trainSearch.addEventListener("input", handleTrainSearch);
-
     elements.stationsGrid.addEventListener("click", (event) => {
         const stationButton = event.target.closest("[data-station]");
         if (stationButton) openBoard(stationButton.dataset.station);
-    });
-
-    elements.trainResult.addEventListener("click", (event) => {
-        const actionButton = event.target.closest("[data-open-station]");
-        if (actionButton?.dataset.openStation) openBoard(actionButton.dataset.openStation);
     });
 
     elements.departuresBody.addEventListener("click", (event) => {
@@ -417,8 +402,7 @@ async function init() {
 
     if (!stationsData?.data || !edrData) {
         renderStationGrid([]);
-        elements.trainResult.innerHTML = `<div class="search-card empty-state">Nepodařilo se načíst výchozí data z API.${getApiHint()}</div>`;
-        elements.trainResult.classList.remove("hidden");
+        elements.stationsGrid.innerHTML = `<div class="empty-state">Nepodařilo se načíst výchozí data z API.${getApiHint()}</div>`;
         return;
     }
 

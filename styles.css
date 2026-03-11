@@ -1,16 +1,16 @@
 :root {
-    --bg: #07111f;
-    --bg-soft: rgba(12, 24, 39, 0.82);
-    --panel: rgba(10, 19, 31, 0.78);
-    --panel-strong: rgba(7, 14, 24, 0.92);
-    --line: rgba(143, 198, 255, 0.18);
-    --text: #edf5ff;
-    --muted: #94abc5;
-    --blue: #57b8ff;
-    --cyan: #75f0ff;
-    --green: #6cf4b5;
-    --red: #ff6f7d;
-    --amber: #ffc86b;
+    --bg: #08131f;
+    --bg-soft: rgba(10, 20, 33, 0.86);
+    --panel: rgba(10, 20, 34, 0.86);
+    --panel-strong: rgba(7, 14, 24, 0.94);
+    --line: rgba(137, 173, 211, 0.22);
+    --text: #eaf4ff;
+    --muted: #97acc4;
+    --blue: #4fa2e6;
+    --cyan: #79c8ff;
+    --green: #7cd7b1;
+    --red: #ff7b87;
+    --amber: #f3c767;
     --shadow: 0 24px 80px rgba(0, 0, 0, 0.42);
     --radius: 22px;
 }
@@ -28,9 +28,9 @@ body {
     color: var(--text);
     font-family: "Segoe UI", "Trebuchet MS", sans-serif;
     background:
-        radial-gradient(circle at top left, rgba(87, 184, 255, 0.18), transparent 28%),
-        radial-gradient(circle at top right, rgba(108, 244, 181, 0.12), transparent 22%),
-        linear-gradient(180deg, #081321 0%, #030811 100%);
+        radial-gradient(circle at top left, rgba(79, 162, 230, 0.12), transparent 30%),
+        radial-gradient(circle at top right, rgba(124, 215, 177, 0.08), transparent 24%),
+        linear-gradient(180deg, #0a1727 0%, #040b14 100%);
     min-height: 100vh;
     overflow-x: hidden;
 }
@@ -83,10 +83,10 @@ body::after {
 .welcome-box {
     width: min(1200px, 100%);
     padding: 36px;
-    background: linear-gradient(180deg, rgba(11, 24, 41, 0.88), rgba(6, 12, 21, 0.92));
+    background: linear-gradient(180deg, rgba(11, 24, 40, 0.9), rgba(6, 13, 22, 0.94));
     border: 1px solid var(--line);
     border-radius: 32px;
-    backdrop-filter: blur(20px);
+    backdrop-filter: blur(14px);
     box-shadow: var(--shadow);
 }
 
@@ -107,10 +107,10 @@ body::after {
 
 .glow-text {
     margin: 18px 0 14px;
-    font-size: clamp(3rem, 8vw, 5.6rem);
+    font-size: clamp(2.8rem, 8vw, 5rem);
     line-height: 0.95;
     letter-spacing: -0.04em;
-    text-shadow: 0 0 40px rgba(87, 184, 255, 0.3);
+    text-shadow: 0 0 28px rgba(79, 162, 230, 0.25);
 }
 
 .hero-copy {
@@ -125,7 +125,7 @@ body::after {
     display: flex;
     flex-wrap: wrap;
     gap: 12px;
-    margin-bottom: 28px;
+    margin-bottom: 22px;
 }
 
 .hero-badge {
@@ -140,6 +140,14 @@ body::after {
 .search-main {
     display: grid;
     gap: 14px;
+}
+
+.station-hint {
+    margin-top: 14px;
+    color: var(--muted);
+    font-size: 0.86rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
 }
 
 .search-divider {
@@ -214,7 +222,7 @@ body::after {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
     gap: 14px;
-    margin-top: 24px;
+    margin-top: 14px;
     max-height: 46vh;
     overflow: auto;
     padding-right: 4px;
@@ -222,17 +230,40 @@ body::after {
 
 .st-card {
     width: 100%;
-    padding: 18px;
+    padding: 14px;
+    display: grid;
+    grid-template-columns: 54px 1fr;
+    align-items: center;
+    gap: 12px;
     border: 1px solid rgba(143, 198, 255, 0.18);
     border-radius: 18px;
-    background: linear-gradient(180deg, rgba(16, 31, 50, 0.92), rgba(9, 19, 31, 0.96));
+    background: linear-gradient(180deg, rgba(13, 27, 45, 0.92), rgba(8, 17, 30, 0.96));
     color: var(--text);
     text-align: left;
-    font-size: 0.98rem;
-    font-weight: 700;
-    text-transform: uppercase;
     cursor: pointer;
     transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.st-card-media {
+    width: 54px;
+    height: 54px;
+    border-radius: 12px;
+    display: grid;
+    place-items: center;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    color: #dff2ff;
+    border: 1px solid rgba(121, 200, 255, 0.28);
+    background:
+        linear-gradient(140deg, rgba(79, 162, 230, 0.36), rgba(124, 215, 177, 0.22)),
+        rgba(6, 15, 25, 0.86);
+}
+
+.st-card-title {
+    font-size: 0.96rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    line-height: 1.25;
 }
 
 .st-card:hover {
@@ -537,6 +568,11 @@ body::after {
     border-bottom: 1px solid rgba(255, 200, 107, 0.08);
 }
 
+.retro-row-departing {
+    color: #fff0b7;
+    animation: retroBlink 1s steps(2, end) infinite;
+}
+
 .retro-board-grid-head {
     color: #c8aa44;
     font-size: 0.84rem;
@@ -582,6 +618,20 @@ body::after {
     }
     50% {
         box-shadow: 0 0 0 1px rgba(255, 111, 125, 0.28), 0 0 24px rgba(255, 111, 125, 0.14);
+    }
+}
+
+@keyframes retroBlink {
+    0%,
+    45% {
+        opacity: 1;
+    }
+    50%,
+    95% {
+        opacity: 0.35;
+    }
+    100% {
+        opacity: 1;
     }
 }
 
