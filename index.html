@@ -7,48 +7,70 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div id="home-screen">
-        <div class="overlay">
-            <div class="welcome-box">
-                <h1 class="glow-text">SimRail CZ1</h1>
-                <div class="search-main">
-                    <input type="text" id="station-search" placeholder="Hledat stanici (např. Koluszki)..." autocomplete="off">
-                    <div class="search-divider">— NEBO HLEDAT ČÍSLO VLAKU —</div>
-                    <input type="text" id="train-global-search" placeholder="Zadejte číslo vlaku..." autocomplete="off">
-                </div>
-                <div id="global-train-result" class="hidden"></div>
-                <div id="stations-grid" class="grid-container"></div>
+    <div class="app-shell">
+        <div id="home-screen">
+            <div class="overlay">
+                <section class="welcome-box">
+                    <div class="eyebrow">DISPEČERSKÝ PANEL 2026</div>
+                    <h1 class="glow-text">SimRail CZ1</h1>
+                    <p class="hero-copy">Rychlý přehled o stanicích, live poloze vlaků, zpoždění a pohybu souprav v jednom rozhraní.</p>
+                    <div class="hero-badges">
+                        <div class="hero-badge">Live API</div>
+                        <div class="hero-badge">Přehled stanice</div>
+                        <div class="hero-badge">Retro tabule</div>
+                    </div>
+                    <div class="search-main">
+                        <input type="text" id="station-search" placeholder="Hledat stanici (např. Koluszki)..." autocomplete="off">
+                        <div class="search-divider">NEBO HLEDAT ČÍSLO VLAKU</div>
+                        <input type="text" id="train-global-search" placeholder="Zadejte číslo nebo název vlaku..." autocomplete="off">
+                    </div>
+                    <div id="global-train-result" class="search-result hidden"></div>
+                    <div id="stations-grid" class="grid-container"></div>
+                </section>
             </div>
         </div>
-    </div>
 
-    <div id="main-content" class="hidden">
-        <div class="sticky-wrapper">
-            <header class="main-header">
-                <button class="glass-btn" id="back-btn">← ZPĚT</button>
-                <div id="header-center">
-                    <h2 id="st-name">NÁZEV STANICE</h2>
+        <div id="main-content" class="hidden">
+            <div class="sticky-wrapper">
+                <header class="main-header">
+                    <button class="glass-btn back-btn" id="back-btn">← Zpět</button>
+                    <div id="header-center">
+                        <div class="station-caption">Aktivní dohled stanice</div>
+                        <h2 id="st-name">NÁZEV STANICE</h2>
+                    </div>
+                    <div class="header-tools">
+                        <button id="view-toggle" class="glass-btn">RETRO TABULE</button>
+                    </div>
+                    <div id="clock">00:00:00</div>
+                </header>
+                <section class="station-toolbar">
+                    <div class="kpi-card">
+                        <span class="kpi-label">Aktivní spoje</span>
+                        <strong id="kpi-active">0</strong>
+                    </div>
+                    <div class="kpi-card">
+                        <span class="kpi-label">Ve stanici</span>
+                        <strong id="kpi-station">0</strong>
+                    </div>
+                    <div class="kpi-card">
+                        <span class="kpi-label">Max. zpoždění</span>
+                        <strong id="kpi-delay">0 min</strong>
+                    </div>
+                </section>
+                <div id="table-header">
+                    <div>Čas</div><div>Spoj</div><div>Odkud</div><div>Cílová stanice</div><div>Nást./Kol.</div><div>Zpoždění</div><div>Stav</div>
                 </div>
-                <div class="header-tools">
-                    <button id="view-toggle" class="glass-btn">RETRO TABULE</button>
-                </div>
-                <div id="clock">00:00:00</div>
-            </header>
-            <div id="table-header">
-                <div>Čas</div><div>Spoj</div><div>Odkud</div><div>Cílová stanice</div><div>Nást./Kol.</div><div>Zpoždění</div><div>Stav</div>
             </div>
+            <main id="station-view">
+                <div id="departures-body"></div>
+            </main>
         </div>
-        <main id="station-view">
-            <div id="departures-body"></div>
-        </main>
-    </div>
 
-
-
-    <div id="board-modal" class="modal hidden">
-        <div class="modal-content retro-modal">
-            <span class="close" id="close-board">&times;</span>
-            <div id="modal-board-container"></div>
+        <div id="board-modal" class="modal hidden">
+            <div class="modal-content retro-modal">
+                <span class="close" id="close-board">&times;</span>
+                <div id="modal-board-container"></div>
+            </div>
         </div>
     </div>
 
