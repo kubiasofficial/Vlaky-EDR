@@ -16,34 +16,33 @@
                     <div style="margin: 15px 0; color: #8a96a3; font-size: 0.9rem;">— NEBO HLEDAT SPOJ —</div>
                     <input type="text" id="train-global-search" placeholder="Zadejte číslo vlaku (např. 14010)...">
                 </div>
-                
                 <div id="global-train-result" class="hidden"></div>
-                
                 <div id="stations-grid" class="grid-container"></div>
             </div>
         </div>
     </div>
 
     <div id="main-content" class="hidden">
-        <div class="main-header">
-            <button id="back-btn" class="glass-btn">← ZPĚT</button>
-            <div id="header-center">
-                <h2 id="st-name">NÁZEV STANICE</h2>
-                <input type="text" id="global-search" placeholder="Hledat v této stanici...">
+        <header class="sticky-header">
+            <div class="main-header">
+                <button id="back-btn" class="glass-btn">← ZPĚT</button>
+                <div id="header-center">
+                    <h2 id="st-name">NÁZEV STANICE</h2>
+                </div>
+                <div class="header-tools">
+                    <button id="view-toggle" class="glass-btn">TABULE</button>
+                    <button id="announcement-btn" class="glass-btn">HLÁŠENÍ</button>
+                </div>
+                <div id="clock">00:00:00</div>
             </div>
-            <div class="header-tools">
-                <button id="view-toggle" class="glass-btn">TABULE</button>
-                <button id="announcement-btn" class="glass-btn">HLÁŠENÍ</button>
-            </div>
-            <div id="clock">00:00:00</div>
-        </div>
-
-        <div id="station-view">
             <div id="table-header">
-                <div>Příjezd / Odjezd</div><div>Spoj</div><div>Odkud</div><div>Kam / Cíl</div><div>Nást./Kol.</div><div>Zpoždění</div><div>Stav</div>
+                <div>Čas příj./odj.</div><div>Spoj</div><div>Odkud</div><div>Kam / Cíl</div><div>Nást./Kol.</div><div>Zpoždění</div><div>Stav</div>
             </div>
+        </header>
+
+        <main id="station-view">
             <div id="departures-body"></div>
-        </div>
+        </main>
     </div>
 
     <div id="board-modal" class="modal hidden">
@@ -61,14 +60,8 @@
                 <button id="auto-ann-toggle" class="dispatch-btn">AUTOMATICKÉ HLÁŠENÍ: VYPNUTO</button>
             </div>
             <div class="ann-columns">
-                <div class="ann-col">
-                    <h3>PŘÍJEZDY</h3>
-                    <div id="arrivals-queue"></div>
-                </div>
-                <div class="ann-col">
-                    <h3>ODJEZDY</h3>
-                    <div id="departures-queue"></div>
-                </div>
+                <div class="ann-col"><h3>PŘÍJEZDY</h3><div id="arrivals-queue"></div></div>
+                <div class="ann-col"><h3>ODJEZDY</h3><div id="departures-queue"></div></div>
             </div>
         </div>
     </div>
