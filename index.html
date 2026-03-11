@@ -2,49 +2,43 @@
 <html lang="cs">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SimRail Live Board | CZ1</title>
+    <title>SimRail Dispečer 2026</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div id="home-screen" class="full-screen">
-        <div class="glass-panel central-hero">
-            <h1>SimRail <span class="cyan">CZ1</span></h1>
+    <div id="home-screen">
+        <div class="welcome-box">
+            <h1>SimRail CZ1</h1>
             <p>Informační systém pro dispečery</p>
             <button id="enter-dispatch" class="dispatch-btn">VSTOUPIT DO DISPEČERSKÉHO REŽIMU</button>
         </div>
     </div>
 
     <div id="main-content" class="hidden">
-        <header class="main-header">
-            <div class="header-left">
-                <button id="back-btn" class="hidden glass-btn">← ZPĚT</button>
-            </div>
-            <div class="header-center">
-                <h2 id="st-name">VYBERTE STANICI</h2>
+        <div class="main-header">
+            <button id="back-btn" class="glass-btn hidden">← ZPĚT</button>
+            <div class="search-container">
                 <input type="text" id="global-search" placeholder="Hledat stanici nebo vlak...">
+                <button id="view-toggle" class="glass-btn hidden">TABULE</button>
             </div>
-            <div class="header-right">
-                <div id="clock">--:--:--</div>
-            </div>
-        </header>
+            <div id="clock">00:00:00</div>
+        </div>
 
-        <main class="container">
-            <div id="stations-grid" class="grid-container"></div>
-            
-            <div id="station-view" class="hidden">
-                <div class="table-header-sticky">
-                    <div class="th-item">Příjezd / Odjezd</div>
-                    <div class="th-item">Spoj</div>
-                    <div class="th-item">Odkud</div>
-                    <div class="th-item">Kam (Cíl)</div>
-                    <div class="th-item">Nást. / Kol.</div>
-                    <div class="th-item">Zpoždění</div>
-                    <div class="th-item">Stav</div>
-                </div>
-                <div id="departures-body"></div>
+        <div id="stations-grid" class="grid-container"></div>
+
+        <div id="station-view" class="hidden">
+            <h2 id="st-name" style="text-align: center; color: var(--neon-cyan); letter-spacing: 2px;"></h2>
+            <div id="table-header" class="table-header-sticky">
+                <div>Čas</div>
+                <div>Spoj</div>
+                <div>Odkud</div>
+                <div>Kam / Cíl</div>
+                <div>Nást./Kol.</div>
+                <div>Zpoždění</div>
+                <div>Stav</div>
             </div>
-        </main>
+            <div id="departures-body"></div>
+        </div>
     </div>
     <script src="app.js"></script>
 </body>

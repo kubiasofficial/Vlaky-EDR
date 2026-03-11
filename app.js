@@ -8,33 +8,29 @@ let currentStation = null;
 let refreshInterval = null;
 let isFirstLoad = true;
 let lastSearchTerm = "";
+let isBoardView = false;
 
-// Body, které nejsou pro cestující zajímavé a kazí výpis Odkud/Kam
-const EXCLUDED_POINTS = ["Koluszki PZS R145", "Koluszki PZS R154", "PZS R145", "PZS R154", "PZS"];
+const EXCLUDED_POINTS = ["Koluszki PZS", "PZS R145", "PZS R154"];
 
 async function fetchData(url) {
-    try {
-        const response = await fetch(url);
-        return await response.json();
-    } catch (e) { return null; }
+    try { const response = await fetch(url); return await response.json(); } catch (e) { return null; }
 }
 
-// Časovač hodin
 setInterval(() => {
-    const el = document.getElementById('clock');
-    if (el) el.innerText = new Date().toLocaleTimeString('cs-CZ');
+    document.getElementById('clock').innerText = new Date().toLocaleTimeString('cs-CZ');
 }, 1000);
 
-// Logika vyhledávání (stanice i vlaky)
-document.getElementById('global-search').addEventListener('input', (e) => {
+document.getElementById('view-toggle').onclick = () => {
+    isBoardView = !isBoardView;
+    document.getElementById('view-toggle').innerText = isBoardView ? "SEZNAM" : "TABULE";
+    updateBoardData();
+};
+
+document.getElementById('global-search').oninput = (e) => {
     lastSearchTerm = e.target.value.toLowerCase();
-    if (currentStation) {
-        updateBoardData();
-    } else {
-        const filtered = allStations.filter(st => st.Name.toLowerCase().includes(lastSearchTerm));
-        renderStations(filtered);
-    }
-});
+    if (currentStation) updateBoardData();
+    else renderStations(allStations.filter(st => st.Name.toLowerCase().includes(lastSearchTerm)));
+};
 
 document.getElementById('enter-dispatch').onclick = () => {
     document.getElementById('home-screen').classList.add('hidden');
@@ -65,27 +61,21 @@ function renderStations(stations) {
 async function openBoard(name) {
     currentStation = name;
     isFirstLoad = true;
-    document.getElementById('global-search').value = "";
-    lastSearchTerm = "";
+    document.getElementById('st-name').innerText = name.toUpperCase();
     document.getElementById('stations-grid').classList.add('hidden');
     document.getElementById('station-view').classList.remove('hidden');
     document.getElementById('back-btn').classList.remove('hidden');
-    document.getElementById('st-name').innerText = name.toUpperCase();
-    
+    document.getElementById('view-toggle').classList.remove('hidden');
     await updateBoardData();
     if (refreshInterval) clearInterval(refreshInterval);
-    refreshInterval = setInterval(updateBoardData, 15000); // 15s refresh pro dynamiku
+    refreshInterval = setInterval(updateBoardData, 15000);
 }
 
-// Funkce, která přeskočí technické body a najde skutečnou stanici
 function getHumanStation(timetable, currentIndex, direction) {
     let idx = currentIndex + direction;
     while (idx >= 0 && idx < timetable.length) {
-        const point = timetable[idx];
-        const isTechnical = EXCLUDED_POINTS.some(p => point.nameForPerson.includes(p));
-        if (!isTechnical) {
-            return point.nameForPerson;
-        }
+        const name = timetable[idx].nameForPerson;
+        if (!EXCLUDED_POINTS.some(p => name.includes(p))) return name;
         idx += direction;
     }
     return direction === -1 ? "Výchozí" : "Konečná";
@@ -94,87 +84,88 @@ function getHumanStation(timetable, currentIndex, direction) {
 async function updateBoardData() {
     if (!currentStation) return;
     const [edr, liveData] = await Promise.all([fetchData(API_EDR), fetchData(API_TRAINS)]);
-    const body = document.getElementById('departures-body');
+    const container = document.getElementById('departures-body');
+    const header = document.getElementById('table-header');
     const now = new Date();
-    body.innerHTML = "";
+    container.innerHTML = "";
 
     if (!edr) return;
 
-    // Filtrujeme vlaky pro danou stanici a aplikujeme hledání
-    const filtered = edr.filter(t => {
-        const hasStation = t.timetable.some(s => s.nameForPerson === currentStation);
-        const matchesSearch = t.trainName.toLowerCase().includes(lastSearchTerm) || t.trainNoLocal.toString().includes(lastSearchTerm);
-        return hasStation && matchesSearch;
-    }).sort((a,b) => {
-        const stopA = a.timetable.find(s => s.nameForPerson === currentStation);
-        const stopB = b.timetable.find(s => s.nameForPerson === currentStation);
-        return new Date(stopA.departureTime || stopA.arrivalTime) - new Date(stopB.departureTime || stopB.arrivalTime);
+    const filtered = edr.filter(t => 
+        t.timetable.some(s => s.nameForPerson === currentStation) &&
+        (t.trainName.toLowerCase().includes(lastSearchTerm) || t.trainNoLocal.toString().includes(lastSearchTerm))
+    ).sort((a,b) => {
+        const sA = a.timetable.find(s => s.nameForPerson === currentStation);
+        const sB = b.timetable.find(s => s.nameForPerson === currentStation);
+        return new Date(sA.departureTime || sA.arrivalTime) - new Date(sB.departureTime || sB.arrivalTime);
     });
 
-    filtered.forEach(item => {
+    if (isBoardView) {
+        header.classList.add('hidden');
+        renderClassicBoard(container, filtered, liveData, now);
+    } else {
+        header.classList.remove('hidden');
+        renderModernList(container, filtered, liveData, now);
+    }
+}
+
+function renderModernList(container, data, liveData, now) {
+    data.forEach(item => {
         const stopIndex = item.timetable.findIndex(s => s.nameForPerson === currentStation);
         const stop = item.timetable[stopIndex];
         const liveTrain = liveData?.data?.find(lt => lt.TrainNoLocal === item.trainNoLocal);
+        let delay = liveTrain?.TrainData?.Delay || 0;
         
-        // GLOBÁLNÍ ZPOŽDĚNÍ: Pokud je vlak na mapě, bereme jeho zpoždění bez ohledu na to, kde je
-        let delay = liveTrain ? (liveTrain.TrainData?.Delay || 0) : 0;
-        
-        const schedArr = stop.arrivalTime ? new Date(stop.arrivalTime) : null;
         const schedDep = stop.departureTime ? new Date(stop.departureTime) : null;
-        
-        let rowClass = "row-arrival";
-        let statusText = "PŘIJEDE";
+        let rowClass = "row-arrival", statusText = "PŘIJEDE";
 
-        if (liveTrain && liveTrain.TrainData) {
-            const currentTrainIdx = liveTrain.TrainData.VDDelayedTimetableIndex;
-            
-            // Logika stavů
-            if (currentTrainIdx === stop.indexOfPoint) {
-                rowClass = "row-at-station";
-                statusText = "VE STANICI";
-                
-                // Dynamické zpoždění ve stanici: pokud už měl odjet, přičítáme minuty
-                if (schedDep) {
-                    const expectedDep = new Date(schedDep.getTime() + delay * 60000);
-                    if (now > expectedDep) {
-                        delay += Math.floor((now - expectedDep) / 60000);
-                    }
-                }
-            } else if (currentTrainIdx > stop.indexOfPoint) {
-                rowClass = "row-departed";
-                statusText = "ODJEL";
-            }
-        } else if (schedDep && now > new Date(schedDep.getTime() + delay * 60000)) {
-            // Pokud není na mapě, ale čas už vypršel
-            rowClass = "row-departed";
-            statusText = "ODJEL";
+        if (liveTrain?.TrainData?.VDDelayedTimetableIndex === stop.indexOfPoint) {
+            rowClass = "row-at-station"; statusText = "VE STANICI";
+            if (schedDep && now > new Date(schedDep.getTime() + delay * 60000)) delay += Math.floor((now - new Date(schedDep.getTime() + delay * 60000)) / 60000);
+        } else if (liveTrain?.TrainData?.VDDelayedTimetableIndex > stop.indexOfPoint || (schedDep && now > new Date(schedDep.getTime() + delay * 60000))) {
+            rowClass = "row-departed"; statusText = "ODJEL";
         }
 
-        body.innerHTML += `
+        container.innerHTML += `
             <div class="train-row ${rowClass}">
-                <div>
-                    <span class="time-label">Příjezd</span>${schedArr ? schedArr.toLocaleTimeString('cs-CZ',{hour:'2-digit',minute:'2-digit'}) : '--:--'}
-                    <span class="time-label">Odjezd</span><span class="cyan">${schedDep ? schedDep.toLocaleTimeString('cs-CZ',{hour:'2-digit',minute:'2-digit'}) : '--:--'}</span>
-                </div>
-                <div><b>${item.trainName}</b><br><small>${item.trainNoLocal}</small></div>
+                <div><span class="time-label">Příjezd</span>${stop.arrivalTime ? new Date(stop.arrivalTime).toLocaleTimeString('cs-CZ',{hour:'2-digit',minute:'2-digit'}) : '--:--'}
+                     <span class="time-label">Odjezd</span><span class="cyan">${stop.departureTime ? new Date(stop.departureTime).toLocaleTimeString('cs-CZ',{hour:'2-digit',minute:'2-digit'}) : '--:--'}</span></div>
+                <div><b>${item.trainName}</b></div>
                 <div>${getHumanStation(item.timetable, stopIndex, -1)}</div>
                 <div><b>${getHumanStation(item.timetable, stopIndex, 1)}</b><br><small>Cíl: ${item.endStation}</small></div>
                 <div>${stop.platform || '-'}/${stop.track || '-'}</div>
-                <div style="color:${delay > 0 ? 'var(--accent-red)' : (liveTrain ? 'var(--accent-green)' : 'var(--text-dim)')}; font-weight:bold; font-size:1.1rem;">
-                    ${liveTrain ? (delay !== 0 ? (delay > 0 ? '+'+delay : delay) + ' min' : 'VČAS') : 'MIMO MAPU'}
-                </div>
+                <div style="color:${delay > 0 ? 'var(--accent-red)' : 'var(--accent-green)'}; font-weight:bold;">${liveTrain ? (delay > 0 ? '+'+delay+' min' : 'VČAS') : 'MIMO MAPU'}</div>
                 <div>${statusText}</div>
             </div>`;
     });
+}
 
-    // Scrollování na první podstatný vlak
-    if (isFirstLoad && lastSearchTerm === "") {
-        const firstActive = body.querySelector('.row-at-station, .row-arrival');
-        if (firstActive) {
-            firstActive.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            isFirstLoad = false;
-        }
-    }
+function renderClassicBoard(container, data, liveData, now) {
+    container.innerHTML = `<div class="board-header-row"><span>Druh</span><span>Číslo</span><span>CÍLOVÁ STANICE</span><span>Přes</span><span>Nás.</span><span>Kol.</span><span>Prav. odjezd</span><span>Zpož.</span></div>`;
+    data.forEach(item => {
+        const stopIndex = item.timetable.findIndex(s => s.nameForPerson === currentStation);
+        const stop = item.timetable[stopIndex];
+        const liveTrain = liveData?.data?.find(lt => lt.TrainNoLocal === item.trainNoLocal);
+        let delay = liveTrain?.TrainData?.Delay || 0;
+        const schedDep = stop.departureTime ? new Date(stop.departureTime) : null;
+
+        if (schedDep && now > new Date(schedDep.getTime() + (delay + 2) * 60000)) return;
+
+        const type = item.trainName.split(" ")[0];
+        const typeClass = ["Rx", "Ex", "IC", "EC", "TLK"].includes(type) ? "board-fast" : "board-os";
+
+        container.innerHTML += `
+            <div class="board-row">
+                <span class="${typeClass}">${type}</span>
+                <span class="${typeClass}">${item.trainNoLocal}</span>
+                <span class="${typeClass}">${item.endStation.toUpperCase()}</span>
+                <span>${getHumanStation(item.timetable, stopIndex, 1)}</span>
+                <span class="board-orange">${stop.platform || ''}</span>
+                <span class="board-orange">${stop.track || ''}</span>
+                <span class="board-orange">${schedDep?.toLocaleTimeString('cs-CZ',{hour:'2-digit',minute:'2-digit'}) || ''}</span>
+                <span class="board-red">${delay > 0 ? delay : ''}</span>
+            </div>`;
+    });
 }
 
 document.getElementById('back-btn').onclick = () => location.reload();
