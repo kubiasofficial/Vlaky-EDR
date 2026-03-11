@@ -3,48 +3,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SimRail Live Board | CZ1</title>
+    <title>SimRail Live Board | Dispečerský režim</title>
     <link rel="stylesheet" href="styles.css">
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="overlay"></div>
-    <header class="glass">
-        <div class="header-left">
-            <span class="live-indicator"><span class="pulse"></span> LIVE</span>
+    <header>
+        <div class="logo-section">
+            <div class="live-dot"></div>
             <h1>SIMRAIL <span class="cyan">CZ1</span></h1>
         </div>
-        <div id="clock" class="clock">--:--:--</div>
-        <button id="back-btn" class="hidden">ZPĚT NA VÝBĚR</button>
+        <div id="clock">--:--:--</div>
     </header>
 
-    <main id="app">
-        <div id="stations-grid" class="grid-container"></div>
+    <main class="container">
+        <button id="back-btn" class="hidden glass-btn">← ZPĚT NA VÝBĚR STANIC</button>
 
-        <section id="station-view" class="hidden">
-            <div class="station-header glass">
-                <h2 id="st-name">Název stanice</h2>
-                <div id="st-info" class="st-meta">Načítání grafikonu...</div>
+        <div id="stations-grid" class="grid-container">
             </div>
-            <div class="board-container glass">
-                <table class="departure-table">
+
+        <div id="station-view" class="hidden glass-panel">
+            <h2 id="st-name">NÁZEV STANICE</h2>
+            <div class="table-wrapper">
+                <table>
                     <thead>
                         <tr>
                             <th>Čas</th>
-                            <th>Spoj</th>
-                            <th>Cílová stanice</th>
-                            <th>Nást.</th>
+                            <th>Vlak</th>
+                            <th>Cíl</th>
+                            <th>Perón</th>
                             <th>Kolej</th>
                             <th>Zpoždění</th>
-                            <th>Poznámky</th>
+                            <th>Stav</th>
                         </tr>
                     </thead>
-                    <tbody id="departures-body"></tbody>
+                    <tbody id="departures-body">
+                        </tbody>
                 </table>
             </div>
-        </section>
+        </div>
     </main>
-
     <script src="app.js"></script>
 </body>
 </html>
