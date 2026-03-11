@@ -67,6 +67,24 @@
                         <strong id="kpi-delay">0 min</strong>
                     </div>
                 </section>
+                <section class="table-controls">
+                    <div class="control-group control-filters">
+                        <button type="button" class="filter-chip active" data-filter="all">Vše</button>
+                        <button type="button" class="filter-chip" data-filter="station">Jen ve stanici</button>
+                        <button type="button" class="filter-chip" data-filter="delayed">Se zpožděním</button>
+                        <button type="button" class="filter-chip" data-filter="fast">IC/EC/EIP</button>
+                    </div>
+                    <div class="control-group control-search">
+                        <input type="text" id="train-search" placeholder="Hledat číslo nebo název vlaku..." autocomplete="off">
+                    </div>
+                    <div class="control-group control-sort">
+                        <label for="sort-mode">Řazení</label>
+                        <select id="sort-mode">
+                            <option value="time">Nejbližší odjezd</option>
+                            <option value="delay">Největší zpoždění</option>
+                        </select>
+                    </div>
+                </section>
                 <div id="table-header">
                     <div>Čas</div><div>Spoj</div><div>Odkud</div><div>Cílová stanice</div><div>Nást./Kol.</div><div>Zpoždění</div><div>Stav</div>
                 </div>

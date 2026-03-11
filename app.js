@@ -38,7 +38,10 @@ const elements = {
     boardContainer: document.getElementById("modal-board-container"),
     kpiActive: document.getElementById("kpi-active"),
     kpiStation: document.getElementById("kpi-station"),
-    kpiDelay: document.getElementById("kpi-delay")
+    kpiDelay: document.getElementById("kpi-delay"),
+    trainSearch: document.getElementById("train-search"),
+    sortMode: document.getElementById("sort-mode"),
+    filterChips: Array.from(document.querySelectorAll(".filter-chip"))
 };
 
 let allStations = [];
@@ -51,6 +54,13 @@ let activeRequestId = 0;
 let lastRenderedTrains = [];
 let lastLiveData = null;
 let lastStationRows = [];
+let lastPositionsData = null;
+
+const uiState = {
+    stationFilter: "all",
+    trainQuery: "",
+    sortMode: "time"
+};
 
 const RETRO_MAX_ROWS = 8;
 const RETRO_PAST_WINDOW_MIN = 8;
@@ -114,6 +124,91 @@ function setClock() {
     if (elements.clock) {
         elements.clock.textContent = new Date().toLocaleTimeString("cs-CZ");
     }
+}
+
+function getTrainClassCode(trainName) {
+    const token = String(trainName || "")
+        .trim()
+        .toUpperCase()
+        .split(/\s+/)[0]
+        .replace(/[^A-Z0-9]/g, "");
+
+    if (!token) return "JINY";
+    if (token.startsWith("TLK")) return "TLK";
+    if (token.startsWith("MPE")) return "MPE";
+    if (token.startsWith("ECE")) return "ECE";
+    if (token.startsWith("EIP")) return "EIP";
+    if (token.startsWith("EIC")) return "EIC";
+    if (token === "EC") return "EC";
+    if (token === "IC") return "IC";
+    if (token === "RE") return "RE";
+    if (token === "R") return "R";
+    if (token.startsWith("EN")) return "EN";
+    if (token.startsWith("REG") || token.startsWith("KS") || token.startsWith("KD")) return "REG";
+    return token;
+}
+
+function getTrainClassBadgeClass(classCode) {
+    if (["EIP", "EIC", "ECE", "EC", "IC"].includes(classCode)) return "class-premium";
+    if (classCode === "TLK") return "class-tlk";
+    if (classCode === "MPE") return "class-mpe";
+    if (["R", "RE", "REG", "KS", "KD"].includes(classCode)) return "class-regional";
+    if (classCode === "EN") return "class-night";
+    return "class-other";
+}
+
+function isFastClass(classCode) {
+    return ["EIP", "EIC", "ECE", "EC", "IC"].includes(classCode);
+}
+
+function applyRowsUiState(rows) {
+    const query = norm(uiState.trainQuery);
+
+    let filtered = rows.filter((row) => {
+        const delay = row.live?.TrainData?.Delay || 0;
+        const inStation = row.currentIndex === row.stop.indexOfPoint;
+        const classCode = getTrainClassCode(row.train?.trainName);
+
+        if (uiState.stationFilter === "station" && !inStation) return false;
+        if (uiState.stationFilter === "delayed" && delay <= 0) return false;
+        if (uiState.stationFilter === "fast" && !isFastClass(classCode)) return false;
+
+        if (!query) return true;
+
+        const haystack = `${row.train?.trainName || ""} ${row.train?.trainNoLocal || ""}`;
+        return norm(haystack).includes(query);
+    });
+
+    if (uiState.sortMode === "delay") {
+        filtered = filtered.slice().sort((first, second) => {
+            const delayDiff = (second.live?.TrainData?.Delay || 0) - (first.live?.TrainData?.Delay || 0);
+            if (delayDiff !== 0) return delayDiff;
+            return first.plannedTime - second.plannedTime;
+        });
+    }
+
+    return filtered;
+}
+
+function setActiveFilterChip(selectedFilter) {
+    elements.filterChips.forEach((chip) => {
+        chip.classList.toggle("active", chip.dataset.filter === selectedFilter);
+    });
+}
+
+function rerenderCurrentStation() {
+    if (!currentStation || !lastLiveData || !lastPositionsData) return;
+    renderTable(lastLiveData, lastPositionsData);
+}
+
+function resetTableControls() {
+    uiState.stationFilter = "all";
+    uiState.trainQuery = "";
+    uiState.sortMode = "time";
+
+    if (elements.trainSearch) elements.trainSearch.value = "";
+    if (elements.sortMode) elements.sortMode.value = "time";
+    setActiveFilterChip("all");
 }
 
 function getApiHint() {
@@ -244,10 +339,12 @@ function renderTable(liveData, posData) {
     if (!currentStation || !cachedEDR.length) return;
 
     const rows = collectStationRows(liveData);
+    const visibleRows = applyRowsUiState(rows);
 
     lastStationRows = rows;
     lastRenderedTrains = rows.map((row) => row.train);
     lastLiveData = liveData;
+    lastPositionsData = posData;
 
     if (!rows.length) {
         elements.departuresBody.innerHTML = '<div class="empty-panel">Pro tuto stanici nejsou v EDR dostupné žádné spoje.</div>';
@@ -255,7 +352,13 @@ function renderTable(liveData, posData) {
         return;
     }
 
-    elements.departuresBody.innerHTML = rows.map((row) => {
+    if (!visibleRows.length) {
+        elements.departuresBody.innerHTML = '<div class="empty-panel">Žádný spoj neodpovídá zvolenému filtru.</div>';
+        updateKpis(rows);
+        return;
+    }
+
+    elements.departuresBody.innerHTML = visibleRows.map((row) => {
         const item = row.train;
         const stop = row.stop;
         const live = row.live;
@@ -263,15 +366,20 @@ function renderTable(liveData, posData) {
         const speed = position ? Math.round(position.Velocity) : 0;
         const delay = live?.TrainData?.Delay || 0;
         const currentIndex = row.currentIndex;
+        const classCode = getTrainClassCode(item.trainName);
+        const classBadgeClass = getTrainClassBadgeClass(classCode);
         let status = "PŘIJEDE";
         let rowClass = "";
+        let statusClass = "status-arriving";
 
         if (currentIndex === stop.indexOfPoint) {
             status = speed < 5 ? "VE STANICI" : "PROJÍŽDÍ";
             rowClass = "row-at-station";
+            statusClass = "status-on-station";
         } else if (currentIndex === stop.indexOfPoint + 1) {
             status = "ODJÍŽDÍ";
             rowClass = "row-departing";
+            statusClass = "status-departing";
         }
 
         const isExpanded = expandedTrains.has(String(item.trainNoLocal));
@@ -279,12 +387,15 @@ function renderTable(liveData, posData) {
         return `
             <div class="train-row ${rowClass}" data-train-id="${escapeHtml(item.trainNoLocal)}">
                 <div class="cell" data-label="Čas">${fmt(stop.arrivalTime)}<br><span class="cell-accent">${fmt(stop.departureTime)}</span></div>
-                <div class="cell" data-label="Spoj"><b>${escapeHtml(item.trainName)} ${escapeHtml(item.trainNoLocal)}</b></div>
+                <div class="cell train-cell" data-label="Spoj">
+                    <span class="train-class-badge ${classBadgeClass}">${escapeHtml(classCode)}</span>
+                    <b>${escapeHtml(item.trainName)} ${escapeHtml(item.trainNoLocal)}</b>
+                </div>
                 <div class="cell" data-label="Odkud">${escapeHtml(getCleanName(item.timetable, item.timetable.indexOf(stop), -1))}</div>
                 <div class="cell" data-label="Cílová stanice"><b>${escapeHtml(item.endStation || "-")}</b></div>
                 <div class="cell" data-label="Nást./Kol.">${escapeHtml(stop.platform || "-")}/${escapeHtml(stop.track || "-")}</div>
                 <div class="cell ${delay > 0 ? "delay-high" : "delay-ok"}" data-label="Zpoždění">+${delay} min</div>
-                <div class="cell status-cell" data-label="Stav"><b>${status}</b></div>
+                <div class="cell status-cell ${statusClass}" data-label="Stav"><b>${status}</b></div>
             </div>
             <div id="det-${escapeHtml(item.trainNoLocal)}" class="train-detail ${isExpanded ? "" : "hidden"}">
                 <div class="detail-topbar">
@@ -379,6 +490,7 @@ async function updateLoop() {
 async function openBoard(stationName) {
     currentStation = stationName;
     isFirstLoad = true;
+    resetTableControls();
     elements.stationName.textContent = stationName.toUpperCase();
     elements.homeScreen.classList.add("hidden");
     elements.mainContent.classList.remove("hidden");
@@ -388,6 +500,24 @@ async function openBoard(stationName) {
 function bindEvents() {
     elements.enterStationsBtn.addEventListener("click", openStationHub);
     elements.hubBackBtn.addEventListener("click", backToLanding);
+
+    elements.filterChips.forEach((chip) => {
+        chip.addEventListener("click", () => {
+            uiState.stationFilter = chip.dataset.filter || "all";
+            setActiveFilterChip(uiState.stationFilter);
+            rerenderCurrentStation();
+        });
+    });
+
+    elements.trainSearch.addEventListener("input", (event) => {
+        uiState.trainQuery = event.target.value || "";
+        rerenderCurrentStation();
+    });
+
+    elements.sortMode.addEventListener("change", (event) => {
+        uiState.sortMode = event.target.value || "time";
+        rerenderCurrentStation();
+    });
 
     elements.stationSearch.addEventListener("input", (event) => {
         const value = norm(event.target.value);
