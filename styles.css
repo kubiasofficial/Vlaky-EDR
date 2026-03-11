@@ -169,6 +169,17 @@ body::before {
     text-transform: uppercase;
 }
 
+.hub-topbar {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 10px;
+}
+
+.hub-back-btn {
+    padding: 10px 14px;
+    font-size: 0.95rem;
+}
+
 .glow-text {
     margin: 16px 0 10px;
     font-family: "Oswald", "Segoe UI", sans-serif;
@@ -408,44 +419,61 @@ body::before {
 
 .train-detail {
     margin-top: -3px;
-    padding: 16px;
-    border: 1px solid rgba(189, 220, 255, 0.16);
+    padding: 18px;
+    border: 1px solid rgba(198, 224, 255, 0.34);
     border-radius: 0 0 14px 14px;
-    background: rgba(3, 22, 45, 0.96);
+    background: linear-gradient(180deg, rgba(3, 20, 41, 0.96), rgba(1, 12, 26, 0.98));
+    font-family: "Segoe UI", Tahoma, sans-serif;
 }
 
 .detail-topbar {
     display: flex;
     flex-wrap: wrap;
     gap: 10px;
-    margin-bottom: 12px;
+    margin-bottom: 14px;
 }
 
 .speed-badge {
     padding: 8px 12px;
-    border-radius: 999px;
-    border: 1px solid rgba(189, 220, 255, 0.22);
-    background: rgba(255, 255, 255, 0.06);
+    border-radius: 10px;
+    border: 1px solid rgba(189, 220, 255, 0.32);
+    background: rgba(255, 255, 255, 0.1);
+    color: #eef5ff;
+    font-size: 0.93rem;
 }
 
 .tt-grid {
     display: grid;
-    grid-template-columns: 0.75fr 0.75fr 2fr 0.6fr;
+    grid-template-columns: 0.8fr 0.8fr 2.2fr 0.7fr;
     gap: 10px;
-    padding: 8px 0;
-    border-bottom: 1px solid rgba(182, 213, 247, 0.12);
+    padding: 10px 12px;
+    border-bottom: 1px solid rgba(182, 213, 247, 0.2);
+    border-radius: 8px;
+    font-size: 0.96rem;
 }
 
 .tt-grid-head {
-    color: #c7d9ee;
+    color: #d8e8fa;
     letter-spacing: 0.1em;
     text-transform: uppercase;
-    font-size: 0.8rem;
+    font-size: 0.76rem;
+    background: rgba(142, 191, 255, 0.16);
+    border: 1px solid rgba(182, 213, 247, 0.28);
 }
 
 .current-pos {
-    color: var(--good);
+    color: #e9fff4;
     font-weight: 700;
+    background: linear-gradient(90deg, rgba(68, 171, 116, 0.35), rgba(68, 171, 116, 0.12));
+    border: 1px solid rgba(123, 230, 169, 0.34);
+}
+
+.train-detail .tt-grid:not(.tt-grid-head):not(.current-pos):nth-child(odd) {
+    background: rgba(174, 208, 247, 0.08);
+}
+
+.train-detail .tt-grid:not(.tt-grid-head):not(.current-pos):nth-child(even) {
+    background: rgba(174, 208, 247, 0.03);
 }
 
 .empty-state,
@@ -717,6 +745,8 @@ body::before {
 
     .tt-grid {
         grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        font-size: 0.9rem;
     }
 
     .retro-board-topline,

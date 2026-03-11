@@ -24,6 +24,7 @@ const elements = {
     landingScreen: document.getElementById("landing-screen"),
     stationHub: document.getElementById("station-hub"),
     enterStationsBtn: document.getElementById("enter-stations-btn"),
+    hubBackBtn: document.getElementById("hub-back-btn"),
     mainContent: document.getElementById("main-content"),
     stationsGrid: document.getElementById("stations-grid"),
     stationSearch: document.getElementById("station-search"),
@@ -348,6 +349,13 @@ function openStationHub() {
     elements.stationSearch.focus();
 }
 
+function backToLanding() {
+    elements.stationHub.classList.add("hidden");
+    elements.landingScreen.classList.remove("hidden");
+    elements.stationSearch.value = "";
+    renderStationGrid(allStations);
+}
+
 async function updateLoop() {
     if (!currentStation) return;
     clearTimeout(refreshTimer);
@@ -379,6 +387,7 @@ async function openBoard(stationName) {
 
 function bindEvents() {
     elements.enterStationsBtn.addEventListener("click", openStationHub);
+    elements.hubBackBtn.addEventListener("click", backToLanding);
 
     elements.stationSearch.addEventListener("input", (event) => {
         const value = norm(event.target.value);
