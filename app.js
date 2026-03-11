@@ -1,3 +1,15 @@
+// Loading spinner
+function showLoading() {
+    if (document.getElementById('loading-spinner')) return;
+    const loader = document.createElement('div');
+    loader.id = 'loading-spinner';
+    loader.innerHTML = '<div class="spinner"></div>';
+    document.body.appendChild(loader);
+}
+function hideLoading() {
+    const loader = document.getElementById('loading-spinner');
+    if (loader) loader.remove();
+}
 const SERVER = "cz1";
 const API_STATIONS = `/api-simrail/stations-open?serverCode=${SERVER}`;
 const API_TRAINS = `/api-simrail/trains-open?serverCode=${SERVER}`;
@@ -34,7 +46,12 @@ init();
 document.getElementById('station-search').oninput = (e) => {
     const val = norm(e.target.value);
     const filtered = allStations.filter(s => norm(s.Name).includes(val));
-    document.getElementById('stations-grid').innerHTML = filtered.map(s => `<div class="st-card" onclick="openBoard('${s.Name.replace(/'/g, "\\'")}')">${s.Name}</div>`).join('');
+    const grid = document.getElementById('stations-grid');
+    if (filtered.length === 0) {
+        grid.innerHTML = '<div style="color:var(--accent-red);padding:20px;">Žádná stanice nenalezena.</div>';
+    } else {
+        grid.innerHTML = filtered.map(s => `<div class="st-card" onclick="openBoard('${s.Name.replace(/'/g, "\\'")}')">${s.Name}</div>`).join('');
+    }
 };
 
 async function openBoard(name) {
@@ -47,7 +64,9 @@ async function openBoard(name) {
 
 async function updateLoop() {
     if (!currentStation) return;
+    showLoading();
     const [live, pos] = await Promise.all([fetchData(API_TRAINS), fetchData(API_POSITIONS)]);
+    hideLoading();
     renderTable(live, pos);
     setTimeout(updateLoop, 15000);
 }
@@ -137,8 +156,4 @@ function getCleanName(tt, idx, dir) {
     return dir === -1 ? "Výchozí" : "Cíl";
 }
 
-document.getElementById('announcement-btn').onclick = () => document.getElementById('announcement-modal').classList.remove('hidden');
-document.getElementById('close-ann').onclick = () => document.getElementById('announcement-modal').classList.add('hidden');
-document.getElementById('auto-ann-toggle').onclick = function() {
-    document.getElementById('announcement-modal').classList.toggle('hidden');
-};
+// odstraněno: zbytky po hlášení
