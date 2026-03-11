@@ -21,6 +21,9 @@ const API_EDR = `${API_AWS_BASE}/getEDRTimetables?serverCode=${SERVER}`;
 
 const elements = {
     homeScreen: document.getElementById("home-screen"),
+    landingScreen: document.getElementById("landing-screen"),
+    stationHub: document.getElementById("station-hub"),
+    enterStationsBtn: document.getElementById("enter-stations-btn"),
     mainContent: document.getElementById("main-content"),
     stationsGrid: document.getElementById("stations-grid"),
     stationSearch: document.getElementById("station-search"),
@@ -333,8 +336,16 @@ function goHome() {
     clearTimeout(refreshTimer);
     elements.mainContent.classList.add("hidden");
     elements.homeScreen.classList.remove("hidden");
+    elements.landingScreen.classList.add("hidden");
+    elements.stationHub.classList.remove("hidden");
     elements.departuresBody.innerHTML = "";
     elements.boardModal.classList.add("hidden");
+}
+
+function openStationHub() {
+    elements.landingScreen.classList.add("hidden");
+    elements.stationHub.classList.remove("hidden");
+    elements.stationSearch.focus();
 }
 
 async function updateLoop() {
@@ -367,6 +378,8 @@ async function openBoard(stationName) {
 }
 
 function bindEvents() {
+    elements.enterStationsBtn.addEventListener("click", openStationHub);
+
     elements.stationSearch.addEventListener("input", (event) => {
         const value = norm(event.target.value);
         const filtered = allStations.filter((station) => norm(station.Name).includes(value));

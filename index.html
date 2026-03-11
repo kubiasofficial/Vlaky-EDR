@@ -10,19 +10,28 @@
     <div class="app-shell">
         <div id="home-screen">
             <div class="overlay">
-                <section class="welcome-box">
-                    <div class="eyebrow">DISPEČERSKÝ PANEL 2026</div>
-                    <h1 class="glow-text">SimRail CZ1</h1>
-                    <p class="hero-copy">Rychlý přehled o stanicích, live poloze vlaků, zpoždění a pohybu souprav v jednom rozhraní.</p>
+                <section class="landing-shell" id="landing-screen">
+                    <div class="brand-ribbon">PKP STYLE DISPATCH VIEW</div>
+                    <h1 class="landing-title">Centrum provozu CZ1</h1>
+                    <p class="landing-copy">Moderní přehled provozu vlaků inspirovaný vizuálem PKP Intercity. Vstup do stanice otevře seznam stanic a živý dohled.</p>
                     <div class="hero-badges">
-                        <div class="hero-badge">Live API</div>
-                        <div class="hero-badge">Přehled stanice</div>
-                        <div class="hero-badge">Retro tabule</div>
+                        <div class="hero-badge">Živá data</div>
+                        <div class="hero-badge">Dispečerské KPI</div>
+                        <div class="hero-badge">Odjezdová tabule</div>
                     </div>
+                    <div class="landing-actions">
+                        <button class="hero-enter-btn" id="enter-stations-btn">Do stanice</button>
+                    </div>
+                </section>
+
+                <section class="welcome-box hidden" id="station-hub">
+                    <div class="eyebrow">VÝBĚR STANICE</div>
+                    <h2 class="glow-text">Seznam stanic CZ1</h2>
+                    <p class="hero-copy">Vyhledej stanici a otevři její live přehled spojů, zpoždění a pohybu souprav.</p>
                     <div class="search-main">
                         <input type="text" id="station-search" placeholder="Hledat stanici (např. Koluszki)..." autocomplete="off">
                     </div>
-                    <div class="station-hint">Vyber stanici z výsledků níže.</div>
+                    <div class="station-hint">Stanice se zobrazí až po kliknutí na „Do stanice“.</div>
                     <div id="stations-grid" class="grid-container"></div>
                 </section>
             </div>
