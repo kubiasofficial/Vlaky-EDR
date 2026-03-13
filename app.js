@@ -24,17 +24,27 @@ const elements = {
     landingScreen: document.getElementById("landing-screen"),
     stationHub: document.getElementById("station-hub"),
     trainHub: document.getElementById("train-hub"),
+    boardHub: document.getElementById("board-hub"),
     enterStationsBtn: document.getElementById("enter-stations-btn"),
     enterTrainsBtn: document.getElementById("enter-trains-btn"),
+    enterBoardsBtn: document.getElementById("enter-boards-btn"),
     hubBackBtn: document.getElementById("hub-back-btn"),
     trainHubBackBtn: document.getElementById("train-hub-back-btn"),
+    boardHubBackBtn: document.getElementById("board-hub-back-btn"),
     mainContent: document.getElementById("main-content"),
     trainContent: document.getElementById("train-content"),
+    boardContent: document.getElementById("board-content"),
     stationsGrid: document.getElementById("stations-grid"),
     trainsGrid: document.getElementById("trains-grid"),
+    boardStationsGrid: document.getElementById("board-stations-grid"),
     stationSearch: document.getElementById("station-search"),
     trainHubSearch: document.getElementById("train-hub-search"),
+    boardStationSearch: document.getElementById("board-station-search"),
     stationName: document.getElementById("st-name"),
+    boardPageStation: document.getElementById("board-page-station"),
+    boardPageClock: document.getElementById("board-page-clock"),
+    boardViewBackBtn: document.getElementById("board-view-back-btn"),
+    dualBoardContainer: document.getElementById("dual-board-container"),
     departuresBody: document.getElementById("departures-body"),
     backBtn: document.getElementById("back-btn"),
     trainBackBtn: document.getElementById("train-back-btn"),
@@ -74,13 +84,19 @@ let lastStationRows = [];
 let lastPositionsData = null;
 let lastTrainHubItems = [];
 let currentTrainNo = null;
+let currentBoardStation = null;
 let currentView = "landing";
+
+const BOARD_MAX_ROWS = 8;
+const BOARD_PAST_WINDOW_MIN = 10;
+const BOARD_FUTURE_WINDOW_MIN = 120;
 
 const uiState = {
     stationFilter: "all",
     trainQuery: "",
     sortMode: "time",
-    trainHubQuery: ""
+    trainHubQuery: "",
+    boardHubQuery: ""
 };
 
 function showLoading() {
@@ -152,6 +168,9 @@ function setClock() {
     }
     if (elements.trainPanelClock) {
         elements.trainPanelClock.textContent = formatted;
+    }
+    if (elements.boardPageClock) {
+        elements.boardPageClock.textContent = new Date().toLocaleTimeString("cs-CZ", { hour: "2-digit", minute: "2-digit" });
     }
 }
 
@@ -432,6 +451,158 @@ function renderStationGrid(stations) {
             `;
         })
         .join("");
+}
+
+function renderBoardStationGrid(stations) {
+    if (!stations.length) {
+        elements.boardStationsGrid.innerHTML = '<div class="empty-state">Žádná stanice nenalezena.</div>';
+        return;
+    }
+
+    elements.boardStationsGrid.innerHTML = stations
+        .map((station) => {
+            const initials = station.Name.split(/\s+/).filter(Boolean).slice(0, 2).map((word) => word[0]).join("").toUpperCase();
+            const imageUrl = String(station.MainImageURL || "").trim();
+            return `
+                <button type="button" class="st-card ${imageUrl ? "has-photo" : "no-photo"}" data-board-station="${escapeHtml(station.Name)}">
+                    <span class="st-card-bg" aria-hidden="true">
+                        ${imageUrl ? `<img src="${escapeHtml(imageUrl)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer">` : ""}
+                    </span>
+                    <span class="st-card-media" aria-hidden="true">${escapeHtml(initials || "ST")}</span>
+                    <span class="st-card-title">${escapeHtml(station.Name)}</span>
+                </button>
+            `;
+        })
+        .join("");
+}
+
+function getBoardEventTime(row, boardType) {
+    if (boardType === "arrivals") {
+        return new Date(row.stop?.arrivalTime || row.stop?.departureTime || 0).getTime();
+    }
+    return new Date(row.stop?.departureTime || row.stop?.arrivalTime || 0).getTime();
+}
+
+function isBoardCandidate(row, boardType) {
+    const now = Date.now();
+    const eventTime = getBoardEventTime(row, boardType);
+    if (!Number.isFinite(eventTime)) return false;
+
+    const inWindow = eventTime >= now - BOARD_PAST_WINDOW_MIN * 60 * 1000 && eventTime <= now + BOARD_FUTURE_WINDOW_MIN * 60 * 1000;
+    if (!inWindow) return false;
+
+    if (!row.live) return true;
+
+    if (boardType === "arrivals") {
+        return row.currentIndex <= row.stop.indexOfPoint + 1;
+    }
+
+    return row.currentIndex >= row.stop.indexOfPoint - 1;
+}
+
+function collectBoardRows(stationName, liveData) {
+    const target = norm(stationName);
+    if (!target) return [];
+
+    return cachedEDR
+        .map((train) => {
+            const stop = train.timetable.find((entry) => norm(entry.nameForPerson).includes(target));
+            if (!stop) return null;
+
+            const live = liveData?.data?.find((entry) => String(entry.TrainNoLocal) === String(train.trainNoLocal));
+            const currentIndex = live?.TrainData?.VDDelayedTimetableIndex ?? -1;
+            const plannedTime = getStopPlanDate(stop).getTime();
+            const delayMinutes = computeTrainDelayMinutes(train, stop, currentIndex);
+
+            return { train, stop, live, currentIndex, plannedTime, delayMinutes };
+        })
+        .filter(Boolean);
+}
+
+function buildBoardRowsByType(rows, boardType) {
+    return rows
+        .filter((row) => isBoardCandidate(row, boardType))
+        .sort((first, second) => getBoardEventTime(first, boardType) - getBoardEventTime(second, boardType))
+        .slice(0, BOARD_MAX_ROWS);
+}
+
+function getBoardStatus(row, boardType) {
+    const stopIndex = row.stop.indexOfPoint;
+    const currentIndex = row.currentIndex;
+
+    if (boardType === "arrivals") {
+        if (currentIndex < stopIndex) return "PRIJEDE";
+        if (currentIndex === stopIndex) return "VE STANICI";
+        return "PRIJEL";
+    }
+
+    if (currentIndex === stopIndex) return "VE STANICI";
+    if (currentIndex === stopIndex + 1) return "ODJIZDI";
+    return "PRIJEDE";
+}
+
+function renderSingleBoard(rows, boardType, stationName) {
+    const boardTitle = boardType === "arrivals" ? "Příjezdy" : "Odjezdy";
+    const boardSubtitle = boardType === "arrivals" ? "Arrivals" : "Departures";
+    const boardRows = buildBoardRowsByType(rows, boardType);
+
+    if (!boardRows.length) {
+        return `
+            <section class="retro-board-panel">
+                <div class="retro-board-panel-title">${boardTitle} <span>${boardSubtitle}</span></div>
+                <div class="retro-empty">Pro tuto stanici teď nejsou dostupná data tabule.</div>
+            </section>
+        `;
+    }
+
+    return `
+        <section class="retro-board-panel">
+            <div class="retro-board">
+                <div class="retro-board-topline">
+                    <div class="retro-route-title">${boardTitle} <span>${boardSubtitle}</span></div>
+                    <div class="retro-station-name">${escapeHtml(stationName.toUpperCase())}</div>
+                    <div class="retro-clock">${new Date().toLocaleTimeString("cs-CZ", { hour: "2-digit", minute: "2-digit" })}</div>
+                </div>
+                <div class="retro-board-grid retro-board-grid-head">
+                    <div>Cas</div><div>Vlak</div><div>${boardType === "arrivals" ? "Odkud" : "Smer"}</div><div>Nastupiste</div><div>Zpozdeni</div><div>Stav</div>
+                </div>
+                ${boardRows.map((row) => {
+                    const item = row.train;
+                    const stop = row.stop;
+                    const stopIndex = item.timetable.indexOf(stop);
+                    const delay = row.delayMinutes || 0;
+                    const status = getBoardStatus(row, boardType);
+                    const directionName = boardType === "arrivals" ? getCleanName(item.timetable, stopIndex, -1) : getCleanName(item.timetable, stopIndex, 1);
+                    const rowClass = status === "ODJIZDI" ? "retro-row-departing" : "";
+
+                    return `
+                        <div class="retro-board-grid ${rowClass}">
+                            <div class="retro-time-cell">${fmt(boardType === "arrivals" ? stop?.arrivalTime || stop?.departureTime : stop?.departureTime || stop?.arrivalTime)}</div>
+                            <div class="retro-train-cell">
+                                <strong>${escapeHtml(item.trainName)} ${escapeHtml(item.trainNoLocal)}</strong>
+                                <span>${escapeHtml(getCleanName(item.timetable, stopIndex, -1))}</span>
+                            </div>
+                            <div class="retro-dir-cell">${escapeHtml(directionName || "-")}</div>
+                            <div class="retro-platform-cell">${escapeHtml(stop?.platform || "-")}/${escapeHtml(stop?.track || "-")}</div>
+                            <div class="retro-delay-cell">+${delay}</div>
+                            <div class="retro-status-cell">${status}</div>
+                        </div>
+                    `;
+                }).join("")}
+            </div>
+        </section>
+    `;
+}
+
+function renderDualBoards(stationName, liveData) {
+    const rows = collectBoardRows(stationName, liveData);
+
+    if (!rows.length) {
+        elements.dualBoardContainer.innerHTML = '<div class="retro-empty">Pro tuto stanici nejsou v EDR dostupná data pro tabuli.</div>';
+        return;
+    }
+
+    elements.dualBoardContainer.innerHTML = `${renderSingleBoard(rows, "arrivals", stationName)}${renderSingleBoard(rows, "departures", stationName)}`;
 }
 
 function buildTrainHubItems(liveData) {
@@ -730,6 +901,7 @@ function toggleTrain(id) {
 function goHome() {
     currentStation = null;
     currentTrainNo = null;
+    currentBoardStation = null;
     currentView = "station-hub";
     activeRequestId += 1;
     isFirstLoad = true;
@@ -737,17 +909,22 @@ function goHome() {
     clearTimeout(refreshTimer);
     elements.mainContent.classList.add("hidden");
     elements.trainContent.classList.add("hidden");
+    elements.boardContent.classList.add("hidden");
     elements.homeScreen.classList.remove("hidden");
     elements.landingScreen.classList.add("hidden");
     elements.stationHub.classList.remove("hidden");
     elements.trainHub.classList.add("hidden");
+    elements.boardHub.classList.add("hidden");
     elements.departuresBody.innerHTML = "";
 }
 
 function openStationHub() {
+    currentBoardStation = null;
     currentView = "station-hub";
     elements.landingScreen.classList.add("hidden");
     elements.trainHub.classList.add("hidden");
+    elements.boardHub.classList.add("hidden");
+    elements.boardContent.classList.add("hidden");
     elements.stationHub.classList.remove("hidden");
     elements.stationSearch.focus();
 }
@@ -756,12 +933,15 @@ async function openTrainHub() {
     currentView = "train-hub";
     currentStation = null;
     currentTrainNo = null;
+    currentBoardStation = null;
     uiState.trainHubQuery = "";
     clearTimeout(refreshTimer);
     elements.landingScreen.classList.add("hidden");
     elements.stationHub.classList.add("hidden");
+    elements.boardHub.classList.add("hidden");
     elements.mainContent.classList.add("hidden");
     elements.trainContent.classList.add("hidden");
+    elements.boardContent.classList.add("hidden");
     elements.homeScreen.classList.remove("hidden");
     elements.trainHub.classList.remove("hidden");
     elements.trainHubSearch.value = "";
@@ -775,19 +955,44 @@ async function openTrainHub() {
     renderTrainGrid(lastTrainHubItems);
 }
 
-function backToLanding() {
-    currentView = "landing";
-    currentTrainNo = null;
+function openBoardHub() {
+    currentView = "board-hub";
     currentStation = null;
+    currentTrainNo = null;
+    currentBoardStation = null;
+    uiState.boardHubQuery = "";
     clearTimeout(refreshTimer);
+    elements.landingScreen.classList.add("hidden");
     elements.stationHub.classList.add("hidden");
     elements.trainHub.classList.add("hidden");
     elements.mainContent.classList.add("hidden");
     elements.trainContent.classList.add("hidden");
+    elements.boardContent.classList.add("hidden");
+    elements.homeScreen.classList.remove("hidden");
+    elements.boardHub.classList.remove("hidden");
+    elements.boardStationSearch.value = "";
+    renderBoardStationGrid(allStations);
+    elements.boardStationSearch.focus();
+}
+
+function backToLanding() {
+    currentView = "landing";
+    currentTrainNo = null;
+    currentStation = null;
+    currentBoardStation = null;
+    clearTimeout(refreshTimer);
+    elements.stationHub.classList.add("hidden");
+    elements.trainHub.classList.add("hidden");
+    elements.boardHub.classList.add("hidden");
+    elements.mainContent.classList.add("hidden");
+    elements.trainContent.classList.add("hidden");
+    elements.boardContent.classList.add("hidden");
     elements.landingScreen.classList.remove("hidden");
     elements.stationSearch.value = "";
     elements.trainHubSearch.value = "";
+    elements.boardStationSearch.value = "";
     renderStationGrid(allStations);
+    renderBoardStationGrid(allStations);
 }
 
 function backToTrainHub() {
@@ -795,8 +1000,18 @@ function backToTrainHub() {
     currentView = "train-hub";
     clearTimeout(refreshTimer);
     elements.trainContent.classList.add("hidden");
+    elements.boardContent.classList.add("hidden");
     elements.homeScreen.classList.remove("hidden");
     elements.trainHub.classList.remove("hidden");
+}
+
+function backToBoardHub() {
+    currentBoardStation = null;
+    currentView = "board-hub";
+    clearTimeout(refreshTimer);
+    elements.boardContent.classList.add("hidden");
+    elements.homeScreen.classList.remove("hidden");
+    elements.boardHub.classList.remove("hidden");
 }
 
 async function updateLoop() {
@@ -840,6 +1055,26 @@ async function updateTrainLoop() {
     refreshTimer = setTimeout(updateTrainLoop, 15000);
 }
 
+async function updateBoardLoop() {
+    if (!currentBoardStation) return;
+    clearTimeout(refreshTimer);
+    const requestId = ++activeRequestId;
+    showLoading();
+    const liveData = await fetchData(API_TRAINS);
+    hideLoading();
+
+    if (requestId !== activeRequestId || !currentBoardStation) return;
+
+    if (!liveData) {
+        elements.dualBoardContainer.innerHTML = `<div class="empty-panel error-panel">Nepodařilo se načíst live data pro tabule.${getApiHint()}</div>`;
+        refreshTimer = setTimeout(updateBoardLoop, 15000);
+        return;
+    }
+
+    renderDualBoards(currentBoardStation, liveData);
+    refreshTimer = setTimeout(updateBoardLoop, 15000);
+}
+
 async function openBoard(stationName) {
     currentStation = stationName;
     currentTrainNo = null;
@@ -851,6 +1086,21 @@ async function openBoard(stationName) {
     elements.trainContent.classList.add("hidden");
     elements.mainContent.classList.remove("hidden");
     await updateLoop();
+}
+
+async function openDualBoards(stationName) {
+    currentBoardStation = stationName;
+    currentStation = null;
+    currentTrainNo = null;
+    currentView = "board-view";
+    activeRequestId += 1;
+    clearTimeout(refreshTimer);
+    elements.boardPageStation.textContent = stationName.toUpperCase();
+    elements.homeScreen.classList.add("hidden");
+    elements.mainContent.classList.add("hidden");
+    elements.trainContent.classList.add("hidden");
+    elements.boardContent.classList.remove("hidden");
+    await updateBoardLoop();
 }
 
 function openRetroPage() {
@@ -878,8 +1128,10 @@ async function openTrainPanel(trainNoLocal) {
 function bindEvents() {
     elements.enterStationsBtn.addEventListener("click", openStationHub);
     elements.enterTrainsBtn.addEventListener("click", openTrainHub);
+    elements.enterBoardsBtn.addEventListener("click", openBoardHub);
     elements.hubBackBtn.addEventListener("click", backToLanding);
     elements.trainHubBackBtn.addEventListener("click", backToLanding);
+    elements.boardHubBackBtn.addEventListener("click", backToLanding);
 
     elements.filterChips.forEach((chip) => {
         chip.addEventListener("click", () => {
@@ -912,6 +1164,13 @@ function bindEvents() {
         renderTrainGrid(filtered);
     });
 
+    elements.boardStationSearch.addEventListener("input", (event) => {
+        uiState.boardHubQuery = event.target.value || "";
+        const query = norm(uiState.boardHubQuery);
+        const filtered = allStations.filter((station) => norm(station.Name).includes(query));
+        renderBoardStationGrid(filtered);
+    });
+
     elements.stationsGrid.addEventListener("click", (event) => {
         const stationButton = event.target.closest("[data-station]");
         if (stationButton) openBoard(stationButton.dataset.station);
@@ -922,6 +1181,11 @@ function bindEvents() {
         if (trainButton) openTrainPanel(trainButton.dataset.trainNo);
     });
 
+    elements.boardStationsGrid.addEventListener("click", (event) => {
+        const stationButton = event.target.closest("[data-board-station]");
+        if (stationButton) openDualBoards(stationButton.dataset.boardStation);
+    });
+
     elements.departuresBody.addEventListener("click", (event) => {
         const row = event.target.closest(".train-row[data-train-id]");
         if (row) toggleTrain(row.dataset.trainId);
@@ -929,6 +1193,7 @@ function bindEvents() {
 
     elements.backBtn.addEventListener("click", goHome);
     elements.trainBackBtn.addEventListener("click", backToTrainHub);
+    elements.boardViewBackBtn.addEventListener("click", backToBoardHub);
     elements.viewToggle.addEventListener("click", openRetroPage);
 }
 
@@ -950,6 +1215,7 @@ async function init() {
     allStations = stationsData.data.slice().sort((first, second) => first.Name.localeCompare(second.Name, "cs"));
     cachedEDR = Array.isArray(edrData) ? edrData : [];
     renderStationGrid(allStations);
+    renderBoardStationGrid(allStations);
 }
 
 init();

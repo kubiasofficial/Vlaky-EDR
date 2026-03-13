@@ -22,6 +22,7 @@
                     <div class="landing-actions">
                         <button class="hero-enter-btn" id="enter-stations-btn">Do stanice</button>
                         <button class="hero-enter-btn hero-alt-btn" id="enter-trains-btn">Do vlaku</button>
+                        <button class="hero-enter-btn hero-alt-btn" id="enter-boards-btn">Odjezdové tabule</button>
                     </div>
                 </section>
 
@@ -51,6 +52,20 @@
                     </div>
                     <div class="station-hint">Seznam je živě načítaný ze serveru CZ1.</div>
                     <div id="trains-grid" class="train-grid"></div>
+                </section>
+
+                <section class="welcome-box hidden" id="board-hub">
+                    <div class="hub-topbar">
+                        <button class="glass-btn hub-back-btn" id="board-hub-back-btn">← Hlavní stránka</button>
+                    </div>
+                    <div class="eyebrow">ODJEZDOVÉ TABULE</div>
+                    <h2 class="glow-text">Vyber stanici pro tabule</h2>
+                    <p class="hero-copy">Zvol stanici a otevři dvojitou dispečerskou tabuli: vlevo příjezdy, vpravo odjezdy.</p>
+                    <div class="search-main">
+                        <input type="text" id="board-station-search" placeholder="Hledat stanici pro tabule..." autocomplete="off">
+                    </div>
+                    <div class="station-hint">Kliknutím na stanici otevřeš příjezdy i odjezdy současně.</div>
+                    <div id="board-stations-grid" class="grid-container"></div>
                 </section>
             </div>
         </div>
@@ -167,6 +182,22 @@
                     <div id="train-timetable-body" class="train-timetable-body"></div>
                 </section>
             </div>
+        </div>
+
+        <div id="board-content" class="hidden">
+            <main class="retro-page-wrap dual-board-wrap">
+                <section class="retro-page-shell dual-board-shell">
+                    <header class="retro-page-header">
+                        <button id="board-view-back-btn" class="glass-btn">← Zpět na výběr stanic</button>
+                        <div class="retro-page-meta">
+                            <div class="retro-page-label">Duální tabule</div>
+                            <h1 id="board-page-station">STANICE</h1>
+                        </div>
+                        <div id="board-page-clock" class="retro-page-clock">00:00</div>
+                    </header>
+                    <div id="dual-board-container" class="dual-retro-boards"></div>
+                </section>
+            </main>
         </div>
 
     </div>
