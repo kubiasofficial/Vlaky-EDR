@@ -572,10 +572,9 @@ function renderSingleBoard(rows, boardType, stationName) {
                     const delay = row.delayMinutes || 0;
                     const classCode = getTrainClassCode(item.trainName);
                     const badgeClass = getTrainClassBadgeClass(classCode);
-                    const boardClass = `retro-class-${badgeClass.replace("class-", "")}`;
                     const status = getBoardStatus(row, boardType);
                     const directionName = boardType === "arrivals" ? getCleanName(item.timetable, stopIndex, -1) : getCleanName(item.timetable, stopIndex, 1);
-                    const rowClass = `${boardClass} ${status === "ODJIZDI" ? "retro-row-departing" : ""}`.trim();
+                    const rowClass = status === "ODJIZDI" ? "retro-row-departing" : "";
 
                     return `
                         <div class="retro-board-grid ${rowClass}">
