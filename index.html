@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SimRail Dispečer CZ1 | Professional</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -24,7 +23,6 @@
                         <button class="hero-enter-btn" id="enter-stations-btn">Do stanice</button>
                         <button class="hero-enter-btn hero-alt-btn" id="enter-trains-btn">Do vlaku</button>
                         <button class="hero-enter-btn hero-alt-btn" id="enter-boards-btn">Odjezdové tabule</button>
-                        <button class="hero-enter-btn hero-alt-btn" id="enter-map-btn">Mapa</button>
                     </div>
                 </section>
 
@@ -199,50 +197,8 @@
             </main>
         </div>
 
-        <div id="map-content" class="hidden">
-            <main class="map-page-wrap">
-                <section class="map-page-shell">
-                    <header class="map-topbar">
-                        <button id="map-back-btn" class="glass-btn">← Zpět na hlavní stránku</button>
-                        <div class="map-topbar-meta">
-                            <div class="map-topbar-label">Live mapa provozu</div>
-                            <h1>CZ1</h1>
-                        </div>
-                    </header>
-                    <div class="map-stage">
-                        <div id="map-canvas" class="map-canvas" role="img" aria-label="Mapa vlaků a stanic"></div>
-                        <aside class="map-info-panel" id="map-info-panel">
-                            <div class="map-info-title">Vybraný vlak</div>
-                            <div class="map-info-number" id="map-info-number">-</div>
-                            <div class="map-info-line" id="map-info-name">Klikni na vlak v mapě</div>
-                            <div class="map-info-line" id="map-info-route">Trasa: -</div>
-                            <div class="map-info-grid">
-                                <div>
-                                    <span>Rychlost</span>
-                                    <strong id="map-info-speed">-</strong>
-                                </div>
-                                <div>
-                                    <span>Zpoždění</span>
-                                    <strong id="map-info-delay">-</strong>
-                                </div>
-                                <div>
-                                    <span>Stav</span>
-                                    <strong id="map-info-status">-</strong>
-                                </div>
-                                <div>
-                                    <span>Lok/Jednotka</span>
-                                    <strong id="map-info-vehicle">-</strong>
-                                </div>
-                            </div>
-                        </aside>
-                    </div>
-                </section>
-            </main>
-        </div>
-
     </div>
 
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
     <script src="app.js"></script>
 </body>
 </html>

@@ -29,24 +29,12 @@ const elements = {
     enterStationsBtn: document.getElementById("enter-stations-btn"),
     enterTrainsBtn: document.getElementById("enter-trains-btn"),
     enterBoardsBtn: document.getElementById("enter-boards-btn"),
-    enterMapBtn: document.getElementById("enter-map-btn"),
     hubBackBtn: document.getElementById("hub-back-btn"),
     trainHubBackBtn: document.getElementById("train-hub-back-btn"),
     boardHubBackBtn: document.getElementById("board-hub-back-btn"),
-    mapBackBtn: document.getElementById("map-back-btn"),
     mainContent: document.getElementById("main-content"),
     trainContent: document.getElementById("train-content"),
     boardContent: document.getElementById("board-content"),
-    mapContent: document.getElementById("map-content"),
-    mapCanvas: document.getElementById("map-canvas"),
-    mapInfoPanel: document.getElementById("map-info-panel"),
-    mapInfoNumber: document.getElementById("map-info-number"),
-    mapInfoName: document.getElementById("map-info-name"),
-    mapInfoRoute: document.getElementById("map-info-route"),
-    mapInfoSpeed: document.getElementById("map-info-speed"),
-    mapInfoDelay: document.getElementById("map-info-delay"),
-    mapInfoStatus: document.getElementById("map-info-status"),
-    mapInfoVehicle: document.getElementById("map-info-vehicle"),
     stationsGrid: document.getElementById("stations-grid"),
     trainsGrid: document.getElementById("trains-grid"),
     boardStationsGrid: document.getElementById("board-stations-grid"),
@@ -100,14 +88,6 @@ let currentBoardStation = null;
 let currentView = "landing";
 let trainPanelNeedsFocus = false;
 let boardDirectionRotatorTimer = null;
-let mapInstance = null;
-let mapRouteLine = null;
-let mapSelectedTrainNo = null;
-let mapStationMarkers = [];
-let mapTrainMarkers = new Map();
-let mapStationCoords = new Map();
-let mapLastLiveData = null;
-let mapLastPositionsData = null;
 const steamPlayerNameCache = new Map();
 const steamPlayerNamePending = new Set();
 
@@ -163,255 +143,6 @@ async function fetchData(url) {
 function fmt(dateValue) {
     if (!dateValue) return "--:--";
     return new Date(dateValue).toLocaleTimeString("cs-CZ", { hour: "2-digit", minute: "2-digit" });
-}
-
-function toFiniteNumber(value) {
-    const parsed = Number(value);
-    return Number.isFinite(parsed) ? parsed : null;
-}
-
-function extractCoordinates(source) {
-    if (!source) return null;
-
-    const lat = toFiniteNumber(
-        source.Latitude ?? source.Latititude ?? source.latitude ?? source.lat ?? source.Lat ?? source.TrainLatitude ?? source.TrainLat
-    );
-    const lon = toFiniteNumber(
-        source.Longitude ?? source.longitude ?? source.lng ?? source.lon ?? source.Lon ?? source.Long ?? source.TrainLongitude ?? source.TrainLon
-    );
-
-    if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
-    if (Math.abs(lat) > 90 || Math.abs(lon) > 180) return null;
-    return [lat, lon];
-}
-
-function getLiveTrainId(liveTrain) {
-    return String(liveTrain?.Id || liveTrain?.id || "").trim();
-}
-
-function getMapTrainPosition(liveTrain, positionsData) {
-    const targetId = getLiveTrainId(liveTrain);
-    const positions = positionsData?.data || [];
-
-    const foundPosition = positions.find((entry) => {
-        const entryId = String(entry?.id || entry?.Id || entry?.TrainId || "").trim();
-        return targetId && entryId && targetId === entryId;
-    });
-
-    return extractCoordinates(foundPosition) || extractCoordinates(liveTrain?.TrainData) || extractCoordinates(liveTrain);
-}
-
-function buildMapStationCoords() {
-    mapStationCoords = new Map();
-
-    (allStations || []).forEach((station) => {
-        const coords = extractCoordinates(station);
-        const stationName = String(station?.Name || "").trim();
-        if (!coords || !stationName) return;
-
-        mapStationCoords.set(norm(stationName), coords);
-    });
-}
-
-function getStationCoordsByName(stationName) {
-    return mapStationCoords.get(norm(stationName || "")) || null;
-}
-
-function ensureMapReady() {
-    if (mapInstance) return true;
-    if (!elements.mapCanvas || !window.L) return false;
-
-    mapInstance = L.map(elements.mapCanvas, {
-        zoomControl: true,
-        preferCanvas: true
-    }).setView([51.93, 19.45], 9);
-
-    L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
-        maxZoom: 19,
-        attribution: "&copy; OpenStreetMap &copy; CARTO"
-    }).addTo(mapInstance);
-
-    // Railway overlay so routes visually follow rail corridors instead of empty terrain.
-    L.tileLayer("https://{s}.tiles.openrailwaymap.org/standard/{z}/{x}/{y}.png", {
-        maxZoom: 19,
-        opacity: 0.72,
-        attribution: "&copy; OpenRailwayMap"
-    }).addTo(mapInstance);
-
-    return true;
-}
-
-function clearMapRoute() {
-    if (mapRouteLine && mapInstance) {
-        mapInstance.removeLayer(mapRouteLine);
-    }
-    mapRouteLine = null;
-}
-
-function updateMapInfoPanel(trainNoLocal) {
-    const fallback = {
-        number: "-",
-        name: "Klikni na vlak v mapě",
-        route: "Trasa: -",
-        speed: "-",
-        delay: "-",
-        status: "-",
-        vehicle: "-"
-    };
-
-    if (!trainNoLocal) {
-        elements.mapInfoNumber.textContent = fallback.number;
-        elements.mapInfoName.textContent = fallback.name;
-        elements.mapInfoRoute.textContent = fallback.route;
-        elements.mapInfoSpeed.textContent = fallback.speed;
-        elements.mapInfoDelay.textContent = fallback.delay;
-        elements.mapInfoStatus.textContent = fallback.status;
-        elements.mapInfoVehicle.textContent = fallback.vehicle;
-        return;
-    }
-
-    const liveTrain = (mapLastLiveData?.data || []).find((entry) => String(entry.TrainNoLocal) === String(trainNoLocal));
-    const edrTrain = cachedEDR.find((entry) => String(entry.trainNoLocal) === String(trainNoLocal));
-    const currentIndex = liveTrain?.TrainData?.VDDelayedTimetableIndex ?? -1;
-    const stop = edrTrain?.timetable?.find((entry) => entry.indexOfPoint === currentIndex) || null;
-    const delay = computeTrainDelayMinutes(edrTrain || { timetable: [] }, stop || edrTrain?.timetable?.[0], currentIndex);
-    const vehicles = parseVehicles(liveTrain?.Vehicles || "");
-    const position = (mapLastPositionsData?.data || []).find((entry) => {
-        const liveId = getLiveTrainId(liveTrain);
-        const posId = String(entry?.id || entry?.Id || entry?.TrainId || "").trim();
-        return liveId && posId && liveId === posId;
-    });
-
-    const speed = Math.max(0, Math.round(Number(position?.Velocity || position?.velocity || 0)));
-    const relevantStops = getRelevantTimetable(edrTrain?.timetable || []);
-    const origin = relevantStops[0]?.nameForPerson || liveTrain?.StartStation || "-";
-    const destination = relevantStops[relevantStops.length - 1]?.nameForPerson || liveTrain?.EndStation || "-";
-    const status = currentIndex >= 0 ? (speed < 5 ? "VE STANICI" : "NA TRASE") : "MIMO DOSAH";
-
-    elements.mapInfoNumber.textContent = `${liveTrain?.TrainNoLocal || trainNoLocal}`;
-    elements.mapInfoName.textContent = `${liveTrain?.TrainName || edrTrain?.trainName || "Vlak"}`;
-    elements.mapInfoRoute.textContent = `Trasa: ${origin} -> ${destination}`;
-    elements.mapInfoSpeed.textContent = `${speed} km/h`;
-    elements.mapInfoDelay.textContent = `+${Math.max(0, delay || 0)} min`;
-    elements.mapInfoStatus.textContent = status;
-    elements.mapInfoVehicle.textContent = vehicles.leadVehicle || "-";
-}
-
-function updateMapRoute(trainNoLocal, fitBounds = false) {
-    clearMapRoute();
-    if (!mapInstance || !trainNoLocal) return;
-
-    const edrTrain = cachedEDR.find((entry) => String(entry.trainNoLocal) === String(trainNoLocal));
-    const routePoints = getRelevantTimetable(edrTrain?.timetable || [])
-        .map((stop) => getStationCoordsByName(stop.nameForPerson))
-        .filter(Boolean);
-
-    if (routePoints.length < 2) return;
-
-    mapRouteLine = L.polyline(routePoints, {
-        color: "#67ff9a",
-        weight: 4,
-        opacity: 0.86,
-        lineCap: "round"
-    }).addTo(mapInstance);
-
-    if (fitBounds) {
-        mapInstance.fitBounds(mapRouteLine.getBounds(), { padding: [38, 38], maxZoom: 12 });
-    }
-}
-
-function setSelectedMapTrain(trainNoLocal, fitBounds = false) {
-    mapSelectedTrainNo = trainNoLocal ? String(trainNoLocal) : null;
-
-    mapTrainMarkers.forEach((marker, markerTrainNo) => {
-        const element = marker.getElement();
-        if (!element) return;
-        element.classList.toggle("selected", markerTrainNo === mapSelectedTrainNo);
-    });
-
-    updateMapInfoPanel(mapSelectedTrainNo);
-    updateMapRoute(mapSelectedTrainNo, fitBounds);
-}
-
-function renderMapStations() {
-    if (!mapInstance) return;
-
-    mapStationMarkers.forEach((marker) => marker.remove());
-    mapStationMarkers = [];
-
-    (allStations || []).forEach((station) => {
-        const coords = extractCoordinates(station);
-        if (!coords) return;
-
-        const icon = L.divIcon({
-            className: "map-station-marker",
-            html: `<span class="map-station-pin"></span><span class="map-station-label">${escapeHtml(String(station.Name || "ST"))}</span>`,
-            iconSize: [128, 18],
-            iconAnchor: [8, 9]
-        });
-
-        const marker = L.marker(coords, { icon, interactive: false }).addTo(mapInstance);
-        mapStationMarkers.push(marker);
-    });
-}
-
-function renderMapTrains(liveData, positionsData) {
-    if (!mapInstance) return;
-
-    const activeNos = new Set();
-    const liveTrains = liveData?.data || [];
-
-    liveTrains.forEach((liveTrain) => {
-        const trainNo = String(liveTrain.TrainNoLocal || "").trim();
-        if (!trainNo) return;
-
-        const coords = getMapTrainPosition(liveTrain, positionsData);
-        if (!coords) return;
-
-        activeNos.add(trainNo);
-        const classCode = getTrainClassCode(liveTrain.TrainName);
-        const markerHtml = `<div class="map-train-dot"></div><span>${escapeHtml(classCode)} ${escapeHtml(trainNo)}</span>`;
-        const icon = L.divIcon({ className: "map-train-marker", html: markerHtml, iconSize: [74, 28], iconAnchor: [37, 14] });
-
-        const existing = mapTrainMarkers.get(trainNo);
-        if (existing) {
-            existing.setLatLng(coords);
-            existing.setIcon(icon);
-        } else {
-            const marker = L.marker(coords, { icon }).addTo(mapInstance);
-            marker.on("click", () => {
-                setSelectedMapTrain(trainNo, true);
-            });
-            mapTrainMarkers.set(trainNo, marker);
-        }
-    });
-
-    Array.from(mapTrainMarkers.keys()).forEach((trainNo) => {
-        if (activeNos.has(trainNo)) return;
-        mapTrainMarkers.get(trainNo)?.remove();
-        mapTrainMarkers.delete(trainNo);
-    });
-
-    if (mapSelectedTrainNo && !mapTrainMarkers.has(mapSelectedTrainNo)) {
-        setSelectedMapTrain(null);
-    } else {
-        setSelectedMapTrain(mapSelectedTrainNo);
-    }
-}
-
-function renderMap(liveData, positionsData) {
-    if (!ensureMapReady()) return;
-
-    mapLastLiveData = liveData;
-    mapLastPositionsData = positionsData;
-
-    if (!mapStationCoords.size) {
-        buildMapStationCoords();
-        renderMapStations();
-    }
-
-    renderMapTrains(liveData, positionsData);
-    requestAnimationFrame(() => mapInstance.invalidateSize());
 }
 
 function isTechnicalStopName(stopName) {
@@ -1480,7 +1211,6 @@ function goHome() {
     elements.mainContent.classList.add("hidden");
     elements.trainContent.classList.add("hidden");
     elements.boardContent.classList.add("hidden");
-    elements.mapContent.classList.add("hidden");
     elements.homeScreen.classList.remove("hidden");
     elements.landingScreen.classList.add("hidden");
     elements.stationHub.classList.remove("hidden");
@@ -1496,7 +1226,6 @@ function openStationHub() {
     elements.trainHub.classList.add("hidden");
     elements.boardHub.classList.add("hidden");
     elements.boardContent.classList.add("hidden");
-    elements.mapContent.classList.add("hidden");
     elements.stationHub.classList.remove("hidden");
     elements.stationSearch.focus();
 }
@@ -1515,7 +1244,6 @@ async function openTrainHub() {
     elements.mainContent.classList.add("hidden");
     elements.trainContent.classList.add("hidden");
     elements.boardContent.classList.add("hidden");
-    elements.mapContent.classList.add("hidden");
     elements.homeScreen.classList.remove("hidden");
     elements.trainHub.classList.remove("hidden");
     elements.trainHubSearch.value = "";
@@ -1543,7 +1271,6 @@ function openBoardHub() {
     elements.mainContent.classList.add("hidden");
     elements.trainContent.classList.add("hidden");
     elements.boardContent.classList.add("hidden");
-    elements.mapContent.classList.add("hidden");
     elements.homeScreen.classList.remove("hidden");
     elements.boardHub.classList.remove("hidden");
     elements.boardStationSearch.value = "";
@@ -1564,7 +1291,6 @@ function backToLanding() {
     elements.mainContent.classList.add("hidden");
     elements.trainContent.classList.add("hidden");
     elements.boardContent.classList.add("hidden");
-    elements.mapContent.classList.add("hidden");
     elements.landingScreen.classList.remove("hidden");
     elements.stationSearch.value = "";
     elements.trainHubSearch.value = "";
@@ -1580,7 +1306,6 @@ function backToTrainHub() {
     clearTimeout(refreshTimer);
     elements.trainContent.classList.add("hidden");
     elements.boardContent.classList.add("hidden");
-    elements.mapContent.classList.add("hidden");
     elements.homeScreen.classList.remove("hidden");
     elements.trainHub.classList.remove("hidden");
 }
@@ -1591,7 +1316,6 @@ function backToBoardHub() {
     stopBoardDirectionRotator();
     clearTimeout(refreshTimer);
     elements.boardContent.classList.add("hidden");
-    elements.mapContent.classList.add("hidden");
     elements.homeScreen.classList.remove("hidden");
     elements.boardHub.classList.remove("hidden");
 }
@@ -1658,49 +1382,6 @@ async function updateBoardLoop() {
     refreshTimer = setTimeout(updateBoardLoop, 15000);
 }
 
-async function updateMapLoop() {
-    if (currentView !== "map-view") return;
-
-    clearTimeout(refreshTimer);
-    const requestId = ++activeRequestId;
-    showLoading();
-    const [liveData, positionsData] = await Promise.all([fetchData(API_TRAINS), fetchData(API_POSITIONS)]);
-    hideLoading();
-
-    if (requestId !== activeRequestId || currentView !== "map-view") return;
-
-    if (!liveData || !positionsData) {
-        elements.mapInfoName.textContent = "Nepodařilo se načíst live data mapy";
-        refreshTimer = setTimeout(updateMapLoop, 12000);
-        return;
-    }
-
-    renderMap(liveData, positionsData);
-    refreshTimer = setTimeout(updateMapLoop, 12000);
-}
-
-async function openMapView() {
-    currentStation = null;
-    currentTrainNo = null;
-    currentBoardStation = null;
-    currentView = "map-view";
-    activeRequestId += 1;
-    stopBoardDirectionRotator();
-    clearTimeout(refreshTimer);
-
-    elements.homeScreen.classList.add("hidden");
-    elements.mainContent.classList.add("hidden");
-    elements.trainContent.classList.add("hidden");
-    elements.boardContent.classList.add("hidden");
-    elements.mapContent.classList.remove("hidden");
-
-    if (!mapStationCoords.size) {
-        buildMapStationCoords();
-    }
-
-    await updateMapLoop();
-}
-
 async function openBoard(stationName) {
     currentStation = stationName;
     currentTrainNo = null;
@@ -1711,7 +1392,6 @@ async function openBoard(stationName) {
     elements.stationName.textContent = stationName.toUpperCase();
     elements.homeScreen.classList.add("hidden");
     elements.trainContent.classList.add("hidden");
-    elements.mapContent.classList.add("hidden");
     elements.mainContent.classList.remove("hidden");
     await updateLoop();
 }
@@ -1727,7 +1407,6 @@ async function openDualBoards(stationName) {
     elements.homeScreen.classList.add("hidden");
     elements.mainContent.classList.add("hidden");
     elements.trainContent.classList.add("hidden");
-    elements.mapContent.classList.add("hidden");
     elements.boardContent.classList.remove("hidden");
     await updateBoardLoop();
 }
@@ -1742,7 +1421,6 @@ async function openTrainPanel(trainNoLocal) {
     clearTimeout(refreshTimer);
     elements.homeScreen.classList.add("hidden");
     elements.mainContent.classList.add("hidden");
-    elements.mapContent.classList.add("hidden");
     elements.trainContent.classList.remove("hidden");
     await updateTrainLoop();
 }
@@ -1751,11 +1429,9 @@ function bindEvents() {
     elements.enterStationsBtn.addEventListener("click", openStationHub);
     elements.enterTrainsBtn.addEventListener("click", openTrainHub);
     elements.enterBoardsBtn.addEventListener("click", openBoardHub);
-    elements.enterMapBtn.addEventListener("click", openMapView);
     elements.hubBackBtn.addEventListener("click", backToLanding);
     elements.trainHubBackBtn.addEventListener("click", backToLanding);
     elements.boardHubBackBtn.addEventListener("click", backToLanding);
-    elements.mapBackBtn.addEventListener("click", backToLanding);
 
     elements.filterChips.forEach((chip) => {
         chip.addEventListener("click", () => {
@@ -1837,7 +1513,6 @@ async function init() {
 
     allStations = stationsData.data.slice().sort((first, second) => first.Name.localeCompare(second.Name, "cs"));
     cachedEDR = Array.isArray(edrData) ? edrData : [];
-    buildMapStationCoords();
     renderStationGrid(allStations);
     renderBoardStationGrid(allStations);
 }
