@@ -643,6 +643,24 @@ function getBoardStatus(row, boardType) {
     return "PRIJEDE";
 }
 
+function getBoardDelayMeta(delayMinutes) {
+    const delay = Math.max(0, Number(delayMinutes) || 0);
+
+    if (delay >= 10) {
+        return { label: `+${delay}`, cssClass: "retro-delay-severe" };
+    }
+
+    if (delay >= 3) {
+        return { label: `+${delay}`, cssClass: "retro-delay-medium" };
+    }
+
+    if (delay > 0) {
+        return { label: `+${delay}`, cssClass: "retro-delay-low" };
+    }
+
+    return { label: "+0", cssClass: "retro-delay-none" };
+}
+
 function renderSingleBoard(rows, boardType, stationName) {
     const boardTitle = boardType === "arrivals" ? "Příjezdy" : "Odjezdy";
     const boardSubtitle = boardType === "arrivals" ? "Arrivals" : "Departures";
@@ -666,22 +684,37 @@ function renderSingleBoard(rows, boardType, stationName) {
                     <div class="retro-clock">${new Date().toLocaleTimeString("cs-CZ", { hour: "2-digit", minute: "2-digit" })}</div>
                 </div>
                 <div class="retro-board-grid retro-board-grid-head">
-                    <div>Cas</div><div>Vlak</div><div>${boardType === "arrivals" ? "Odkud" : "Smer"}</div><div>Nastupiste</div><div>Zpozdeni</div><div>Stav</div>
+                    <div>Cas</div><div>Vlak</div><div>${boardType === "arrivals" ? "Odkud" : "Smer"}</div><div>Peron</div><div>Opozn.</div><div>Status</div>
                 </div>
                 ${boardRows.map((row) => {
                     const item = row.train;
                     const stop = row.stop;
                     const stopIndex = item.timetable.indexOf(stop);
                     const delay = row.delayMinutes || 0;
+                    const delayMeta = getBoardDelayMeta(delay);
                     const classCode = getTrainClassCode(item.trainName);
                     const badgeClass = getTrainClassBadgeClass(classCode);
                     const status = getBoardStatus(row, boardType);
                     const directionName = boardType === "arrivals" ? getCleanName(item.timetable, stopIndex, -1) : getCleanName(item.timetable, stopIndex, 1);
-                    const rowClass = status === "ODJIZDI" ? "retro-row-departing" : "";
+                    const eventTimeRaw = boardType === "arrivals" ? stop?.arrivalTime || stop?.departureTime : stop?.departureTime || stop?.arrivalTime;
+                    const eventTime = new Date(eventTimeRaw);
+                    const expectedTime = Number.isFinite(eventTime.getTime()) ? new Date(eventTime.getTime() + delay * 60000) : null;
+                    const rowClass = [
+                        status === "ODJIZDI" ? "retro-row-departing" : "",
+                        delayMeta.cssClass
+                    ].filter(Boolean).join(" ");
+                    const statusClass = status === "VE STANICI"
+                        ? "retro-status-station"
+                        : status === "ODJIZDI"
+                            ? "retro-status-departing"
+                            : "retro-status-arriving";
 
                     return `
                         <div class="retro-board-grid ${rowClass}">
-                            <div class="retro-time-cell">${fmt(boardType === "arrivals" ? stop?.arrivalTime || stop?.departureTime : stop?.departureTime || stop?.arrivalTime)}</div>
+                            <div class="retro-time-cell">
+                                <strong>${fmt(eventTimeRaw)}</strong>
+                                <span>${expectedTime ? `exp ${fmt(expectedTime)}` : "exp --:--"}</span>
+                            </div>
                             <div class="retro-train-cell">
                                 <span class="train-class-badge ${badgeClass}">${escapeHtml(classCode)}</span>
                                 <strong>${escapeHtml(item.trainName)} ${escapeHtml(item.trainNoLocal)}</strong>
@@ -689,8 +722,8 @@ function renderSingleBoard(rows, boardType, stationName) {
                             </div>
                             <div class="retro-dir-cell">${escapeHtml(directionName || "-")}</div>
                             <div class="retro-platform-cell">${escapeHtml(stop?.platform || "-")}/${escapeHtml(stop?.track || "-")}</div>
-                            <div class="retro-delay-cell">+${delay}</div>
-                            <div class="retro-status-cell">${status}</div>
+                            <div class="retro-delay-cell"><b>${delayMeta.label}</b><span>min</span></div>
+                            <div class="retro-status-cell"><b class="${statusClass}">${status}</b></div>
                         </div>
                     `;
                 }).join("")}

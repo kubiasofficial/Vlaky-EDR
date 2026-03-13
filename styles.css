@@ -1318,24 +1318,33 @@ body::before {
 
 .retro-board {
     display: grid;
-    gap: 8px;
+    gap: 9px;
     padding: 10px;
-    border-radius: 10px;
-    border: 1px solid rgba(130, 174, 247, 0.52);
-    background: rgba(3, 13, 28, 0.82);
+    border-radius: 8px;
+    border: 1px solid rgba(91, 129, 192, 0.52);
+    background:
+        linear-gradient(180deg, rgba(1, 9, 23, 0.98), rgba(2, 13, 29, 0.96)),
+        repeating-linear-gradient(
+            180deg,
+            rgba(255, 255, 255, 0.018) 0,
+            rgba(255, 255, 255, 0.018) 1px,
+            transparent 1px,
+            transparent 4px
+        );
+    font-variant-numeric: tabular-nums;
 }
 
 .retro-board-topline,
 .retro-board-grid {
     display: grid;
-    grid-template-columns: 0.9fr 1.35fr 1.4fr 0.8fr 0.75fr 0.9fr;
+    grid-template-columns: 0.95fr 1.45fr 1.35fr 0.72fr 0.72fr 0.9fr;
     gap: 10px;
     align-items: center;
 }
 
 .retro-board-topline {
-    padding: 8px;
-    border-bottom: 1px solid rgba(255, 205, 106, 0.38);
+    padding: 7px 8px 8px;
+    border-bottom: 1px solid rgba(255, 200, 92, 0.45);
 }
 
 .retro-route-title {
@@ -1344,7 +1353,7 @@ body::before {
 
 .retro-route-title span {
     margin-left: 8px;
-    opacity: 0.84;
+    opacity: 0.78;
 }
 
 .retro-station-name {
@@ -1358,11 +1367,12 @@ body::before {
 }
 
 .retro-board-grid {
-    padding: 9px;
+    padding: 10px 9px;
     border-radius: 4px;
-    border: 1px solid rgba(89, 129, 223, 0.42);
-    background: linear-gradient(180deg, rgba(34, 93, 198, 0.94), rgba(21, 65, 153, 0.95));
-    color: #edf3ff;
+    border: 1px solid rgba(83, 132, 213, 0.42);
+    background: linear-gradient(180deg, rgba(26, 79, 171, 0.95), rgba(19, 62, 142, 0.95));
+    color: #f9fcff;
+    font-weight: 700;
 }
 
 .retro-board-grid .train-class-badge {
@@ -1371,15 +1381,33 @@ body::before {
 }
 
 .retro-board-grid-head {
-    font-size: 0.74rem;
-    letter-spacing: 0.08em;
+    font-size: 0.72rem;
+    letter-spacing: 0.13em;
     text-transform: uppercase;
-    background: rgba(8, 28, 67, 0.94);
-    color: #ffdf86;
+    background: rgba(2, 19, 50, 0.98);
+    color: #ffc94d;
+    border-color: rgba(86, 130, 199, 0.6);
 }
 
 .retro-row-departing {
     animation: retroBlink 1s steps(2, end) infinite;
+}
+
+.retro-delay-none {
+    border-left: 3px solid rgba(106, 233, 174, 0.36);
+}
+
+.retro-delay-low {
+    border-left: 3px solid rgba(255, 205, 98, 0.68);
+}
+
+.retro-delay-medium {
+    border-left: 3px solid rgba(255, 160, 82, 0.9);
+}
+
+.retro-delay-severe {
+    border-left: 3px solid rgba(255, 96, 96, 0.98);
+    box-shadow: inset 0 0 0 1px rgba(255, 126, 126, 0.28);
 }
 
 .retro-time-cell,
@@ -1387,6 +1415,32 @@ body::before {
 .retro-delay-cell,
 .retro-status-cell {
     font-weight: 700;
+}
+
+.retro-time-cell strong,
+.retro-delay-cell b,
+.retro-platform-cell,
+.retro-status-cell b {
+    font-family: "Oswald", "Segoe UI", sans-serif;
+    letter-spacing: 0.04em;
+}
+
+.retro-time-cell {
+    display: grid;
+    gap: 2px;
+}
+
+.retro-time-cell strong {
+    font-size: 1.24rem;
+    line-height: 1;
+    color: #ffffff;
+}
+
+.retro-time-cell span {
+    color: #ffd471;
+    font-size: 0.62rem;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
 }
 
 .retro-train-cell strong,
@@ -1400,8 +1454,108 @@ body::before {
 .retro-train-cell span {
     display: block;
     margin-top: 2px;
-    opacity: 0.88;
-    font-size: 0.72rem;
+    color: #c6dcff;
+    opacity: 0.92;
+    font-size: 0.64rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.retro-train-cell strong {
+    font-size: 1.12rem;
+    letter-spacing: 0.025em;
+}
+
+.retro-dir-cell {
+    color: #f5f9ff;
+    text-transform: uppercase;
+}
+
+.retro-delay-cell {
+    justify-self: center;
+    min-width: 68px;
+    border-radius: 4px;
+    padding: 5px 6px 4px;
+    text-align: center;
+    background: rgba(3, 20, 52, 0.58);
+    border: 1px solid rgba(155, 192, 255, 0.38);
+}
+
+.retro-delay-cell b {
+    display: block;
+    font-size: 1.18rem;
+    line-height: 1;
+}
+
+.retro-delay-cell span {
+    display: block;
+    margin-top: 1px;
+    color: #a9c9f4;
+    font-size: 0.52rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+}
+
+.retro-delay-none .retro-delay-cell b {
+    color: #7ce2ad;
+}
+
+.retro-delay-low .retro-delay-cell b {
+    color: #ffe18a;
+}
+
+.retro-delay-medium .retro-delay-cell b {
+    color: #ffc17b;
+}
+
+.retro-delay-severe .retro-delay-cell b {
+    color: #ff9f98;
+    animation: severeDelayPulse 1.1s ease-in-out infinite;
+}
+
+.retro-status-cell b {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 98px;
+    border-radius: 999px;
+    padding: 5px 10px;
+    font-size: 0.77rem;
+    letter-spacing: 0.08em;
+}
+
+.retro-status-arriving {
+    color: #dff1ff;
+    background: rgba(52, 104, 189, 0.5);
+    border: 1px solid rgba(156, 201, 255, 0.48);
+}
+
+.retro-status-station {
+    color: #dbffec;
+    background: rgba(56, 152, 98, 0.44);
+    border: 1px solid rgba(136, 233, 182, 0.58);
+}
+
+.retro-status-departing {
+    color: #fff2e5;
+    background: rgba(198, 96, 55, 0.5);
+    border: 1px solid rgba(255, 175, 132, 0.64);
+}
+
+.retro-clock,
+.retro-time-cell strong,
+.retro-delay-cell b {
+    font-feature-settings: "tnum" 1;
+}
+
+@keyframes severeDelayPulse {
+    0%,
+    100% {
+        text-shadow: 0 0 0 rgba(255, 124, 124, 0);
+    }
+    50% {
+        text-shadow: 0 0 12px rgba(255, 124, 124, 0.45);
+    }
 }
 
 .dual-board-wrap {
