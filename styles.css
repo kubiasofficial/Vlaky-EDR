@@ -1768,20 +1768,36 @@ body::before {
     border: none;
 }
 
-.map-station-marker span {
+.map-station-marker {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.map-station-pin {
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+    background: #ff6fa9;
+    border: 1px solid rgba(255, 222, 237, 0.85);
+    box-shadow: 0 0 0 3px rgba(255, 111, 169, 0.18);
+}
+
+.map-station-label {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-width: 78px;
-    max-width: 120px;
-    height: 18px;
+    min-width: 72px;
+    max-width: 116px;
+    height: 17px;
     padding: 0 6px;
     border-radius: 999px;
-    border: 1px solid rgba(245, 130, 180, 0.85);
-    background: rgba(255, 255, 255, 0.94);
-    color: #1f314e;
-    font-size: 0.66rem;
+    border: 1px solid rgba(255, 153, 196, 0.8);
+    background: rgba(14, 25, 45, 0.9);
+    color: #ffd6e8;
+    font-size: 0.62rem;
     font-weight: 700;
+    letter-spacing: 0.04em;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;

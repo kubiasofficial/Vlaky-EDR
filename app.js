@@ -174,7 +174,7 @@ function extractCoordinates(source) {
     if (!source) return null;
 
     const lat = toFiniteNumber(
-        source.Latitude ?? source.latitude ?? source.lat ?? source.Lat ?? source.TrainLatitude ?? source.TrainLat
+        source.Latitude ?? source.Latititude ?? source.latitude ?? source.lat ?? source.Lat ?? source.TrainLatitude ?? source.TrainLat
     );
     const lon = toFiniteNumber(
         source.Longitude ?? source.longitude ?? source.lng ?? source.lon ?? source.Lon ?? source.Long ?? source.TrainLongitude ?? source.TrainLon
@@ -229,6 +229,13 @@ function ensureMapReady() {
     L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
         maxZoom: 19,
         attribution: "&copy; OpenStreetMap &copy; CARTO"
+    }).addTo(mapInstance);
+
+    // Railway overlay so routes visually follow rail corridors instead of empty terrain.
+    L.tileLayer("https://{s}.tiles.openrailwaymap.org/standard/{z}/{x}/{y}.png", {
+        maxZoom: 19,
+        opacity: 0.72,
+        attribution: "&copy; OpenRailwayMap"
     }).addTo(mapInstance);
 
     return true;
@@ -338,9 +345,9 @@ function renderMapStations() {
 
         const icon = L.divIcon({
             className: "map-station-marker",
-            html: `<span>${escapeHtml(String(station.Name || "ST"))}</span>`,
-            iconSize: [90, 18],
-            iconAnchor: [45, 9]
+            html: `<span class="map-station-pin"></span><span class="map-station-label">${escapeHtml(String(station.Name || "ST"))}</span>`,
+            iconSize: [128, 18],
+            iconAnchor: [8, 9]
         });
 
         const marker = L.marker(coords, { icon, interactive: false }).addTo(mapInstance);
