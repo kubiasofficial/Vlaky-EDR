@@ -1380,6 +1380,16 @@ body::before {
     vertical-align: middle;
 }
 
+.retro-route-badge {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    margin-right: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 .retro-board-grid-head {
     font-size: 0.72rem;
     letter-spacing: 0.13em;
@@ -1444,8 +1454,7 @@ body::before {
 }
 
 .retro-train-cell strong,
-.retro-train-cell span,
-.retro-dir-cell {
+.retro-train-cell span {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -1469,6 +1478,29 @@ body::before {
 .retro-dir-cell {
     color: #f5f9ff;
     text-transform: uppercase;
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+}
+
+.retro-dir-main {
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.retro-dir-rotator {
+    display: block;
+    color: #ffd471;
+    font-size: 0.62rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-height: 1.1em;
+    animation: boardRotatorFade 1.8s ease-in-out infinite;
 }
 
 .retro-delay-cell {
@@ -1791,5 +1823,15 @@ body::before {
 
     .retro-page-clock {
         justify-self: start;
+    }
+}
+
+@keyframes boardRotatorFade {
+    0%,
+    100% {
+        opacity: 0.72;
+    }
+    50% {
+        opacity: 1;
     }
 }

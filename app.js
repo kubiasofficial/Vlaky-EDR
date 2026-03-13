@@ -87,6 +87,7 @@ let currentTrainNo = null;
 let currentBoardStation = null;
 let currentView = "landing";
 let trainPanelNeedsFocus = false;
+let boardDirectionRotatorTimer = null;
 const steamPlayerNameCache = new Map();
 const steamPlayerNamePending = new Set();
 
@@ -596,10 +597,12 @@ function isBoardCandidate(row, boardType) {
     if (!row.live) return true;
 
     if (boardType === "arrivals") {
-        return row.currentIndex <= row.stop.indexOfPoint + 1;
+        // Remove arrival rows once the train has clearly passed the station.
+        return row.currentIndex <= row.stop.indexOfPoint;
     }
 
-    return row.currentIndex >= row.stop.indexOfPoint - 1;
+    // Keep departure row only until the departure moment; then hide it.
+    return row.currentIndex >= row.stop.indexOfPoint - 1 && row.currentIndex <= row.stop.indexOfPoint + 1;
 }
 
 function collectBoardRows(stationName, liveData) {
@@ -641,6 +644,81 @@ function getBoardStatus(row, boardType) {
     if (currentIndex === stopIndex) return "VE STANICI";
     if (currentIndex === stopIndex + 1) return "ODJIZDI";
     return "PRIJEDE";
+}
+
+function getBoardPlatformLabel(stop) {
+    const platform = String(stop?.platform || "").trim();
+    const track = String(stop?.track || "").trim();
+
+    if (!platform && !track) {
+        return "PROJIZDI";
+    }
+
+    return `${platform || "-"}/${track || "-"}`;
+}
+
+function getBoardRouteBadgeText(train, boardType) {
+    const relevantStops = getRelevantTimetable(train?.timetable || []);
+    if (!relevantStops.length) return "-";
+
+    if (boardType === "arrivals") {
+        return relevantStops[0]?.nameForPerson || "-";
+    }
+
+    return relevantStops[relevantStops.length - 1]?.nameForPerson || "-";
+}
+
+function getBoardRotatorStops(train, stop, boardType) {
+    const relevantStops = getRelevantTimetable(train?.timetable || []);
+    if (!relevantStops.length) return [];
+
+    const stopPoint = stop?.indexOfPoint;
+    const candidates = boardType === "arrivals"
+        ? relevantStops.filter((entry) => entry.indexOfPoint < stopPoint)
+        : relevantStops.filter((entry) => entry.indexOfPoint > stopPoint);
+
+    const uniqueNames = [];
+    const seen = new Set();
+
+    candidates.forEach((entry) => {
+        const name = String(entry?.nameForPerson || "").trim();
+        if (!name || seen.has(name)) return;
+        seen.add(name);
+        uniqueNames.push(name);
+    });
+
+    return uniqueNames;
+}
+
+function stopBoardDirectionRotator() {
+    if (boardDirectionRotatorTimer) {
+        clearInterval(boardDirectionRotatorTimer);
+        boardDirectionRotatorTimer = null;
+    }
+}
+
+function startBoardDirectionRotator() {
+    stopBoardDirectionRotator();
+
+    const rotators = Array.from(document.querySelectorAll(".js-board-dir-rotator"));
+    if (!rotators.length) return;
+
+    boardDirectionRotatorTimer = setInterval(() => {
+        rotators.forEach((node) => {
+            const rawStops = String(node.dataset.stops || "");
+            if (!rawStops) return;
+
+            const stops = rawStops.split("|||").map((entry) => entry.trim()).filter(Boolean);
+            if (stops.length <= 1) return;
+
+            const currentIndex = Number(node.dataset.idx || 0);
+            const nextIndex = (Number.isFinite(currentIndex) ? currentIndex : 0) + 1;
+            const normalizedIndex = nextIndex % stops.length;
+
+            node.dataset.idx = String(normalizedIndex);
+            node.textContent = stops[normalizedIndex];
+        });
+    }, 1800);
 }
 
 function getBoardDelayMeta(delayMinutes) {
@@ -696,6 +774,10 @@ function renderSingleBoard(rows, boardType, stationName) {
                     const badgeClass = getTrainClassBadgeClass(classCode);
                     const status = getBoardStatus(row, boardType);
                     const directionName = boardType === "arrivals" ? getCleanName(item.timetable, stopIndex, -1) : getCleanName(item.timetable, stopIndex, 1);
+                    const routeBadgeText = getBoardRouteBadgeText(item, boardType);
+                    const rotatorStops = getBoardRotatorStops(item, stop, boardType);
+                    const rotatorSerialized = rotatorStops.join("|||");
+                    const initialRotatorText = rotatorStops[0] || (boardType === "arrivals" ? "Trasa pred stanic" : "Trasa za stanici");
                     const eventTimeRaw = boardType === "arrivals" ? stop?.arrivalTime || stop?.departureTime : stop?.departureTime || stop?.arrivalTime;
                     const eventTime = new Date(eventTimeRaw);
                     const expectedTime = Number.isFinite(eventTime.getTime()) ? new Date(eventTime.getTime() + delay * 60000) : null;
@@ -716,12 +798,15 @@ function renderSingleBoard(rows, boardType, stationName) {
                                 <span>${expectedTime ? `exp ${fmt(expectedTime)}` : "exp --:--"}</span>
                             </div>
                             <div class="retro-train-cell">
-                                <span class="train-class-badge ${badgeClass}">${escapeHtml(classCode)}</span>
-                                <strong>${escapeHtml(item.trainName)} ${escapeHtml(item.trainNoLocal)}</strong>
-                                <span>${escapeHtml(getCleanName(item.timetable, stopIndex, -1))}</span>
+                                <span class="train-class-badge ${badgeClass} retro-route-badge" title="${escapeHtml(routeBadgeText)}">${escapeHtml(routeBadgeText)}</span>
+                                <strong>${escapeHtml(classCode)} ${escapeHtml(item.trainNoLocal)}</strong>
+                                <span>${escapeHtml(item.trainName)}</span>
                             </div>
-                            <div class="retro-dir-cell">${escapeHtml(directionName || "-")}</div>
-                            <div class="retro-platform-cell">${escapeHtml(stop?.platform || "-")}/${escapeHtml(stop?.track || "-")}</div>
+                            <div class="retro-dir-cell">
+                                <strong class="retro-dir-main">${escapeHtml(directionName || "-")}</strong>
+                                <span class="retro-dir-rotator js-board-dir-rotator" data-stops="${escapeHtml(rotatorSerialized)}" data-idx="0">${escapeHtml(initialRotatorText)}</span>
+                            </div>
+                            <div class="retro-platform-cell">${escapeHtml(getBoardPlatformLabel(stop))}</div>
                             <div class="retro-delay-cell"><b>${delayMeta.label}</b><span>min</span></div>
                             <div class="retro-status-cell"><b class="${statusClass}">${status}</b></div>
                         </div>
@@ -736,11 +821,13 @@ function renderDualBoards(stationName, liveData) {
     const rows = collectBoardRows(stationName, liveData);
 
     if (!rows.length) {
+        stopBoardDirectionRotator();
         elements.dualBoardContainer.innerHTML = '<div class="retro-empty">Pro tuto stanici nejsou v EDR dostupná data pro tabuli.</div>';
         return;
     }
 
     elements.dualBoardContainer.innerHTML = `${renderSingleBoard(rows, "arrivals", stationName)}${renderSingleBoard(rows, "departures", stationName)}`;
+    startBoardDirectionRotator();
 }
 
 function buildTrainHubItems(liveData) {
@@ -1097,6 +1184,7 @@ function goHome() {
     activeRequestId += 1;
     isFirstLoad = true;
     expandedTrains.clear();
+    stopBoardDirectionRotator();
     clearTimeout(refreshTimer);
     elements.mainContent.classList.add("hidden");
     elements.trainContent.classList.add("hidden");
@@ -1126,6 +1214,7 @@ async function openTrainHub() {
     currentTrainNo = null;
     currentBoardStation = null;
     uiState.trainHubQuery = "";
+    stopBoardDirectionRotator();
     clearTimeout(refreshTimer);
     elements.landingScreen.classList.add("hidden");
     elements.stationHub.classList.add("hidden");
@@ -1152,6 +1241,7 @@ function openBoardHub() {
     currentTrainNo = null;
     currentBoardStation = null;
     uiState.boardHubQuery = "";
+    stopBoardDirectionRotator();
     clearTimeout(refreshTimer);
     elements.landingScreen.classList.add("hidden");
     elements.stationHub.classList.add("hidden");
@@ -1171,6 +1261,7 @@ function backToLanding() {
     currentTrainNo = null;
     currentStation = null;
     currentBoardStation = null;
+    stopBoardDirectionRotator();
     clearTimeout(refreshTimer);
     elements.stationHub.classList.add("hidden");
     elements.trainHub.classList.add("hidden");
@@ -1189,6 +1280,7 @@ function backToLanding() {
 function backToTrainHub() {
     currentTrainNo = null;
     currentView = "train-hub";
+    stopBoardDirectionRotator();
     clearTimeout(refreshTimer);
     elements.trainContent.classList.add("hidden");
     elements.boardContent.classList.add("hidden");
@@ -1199,6 +1291,7 @@ function backToTrainHub() {
 function backToBoardHub() {
     currentBoardStation = null;
     currentView = "board-hub";
+    stopBoardDirectionRotator();
     clearTimeout(refreshTimer);
     elements.boardContent.classList.add("hidden");
     elements.homeScreen.classList.remove("hidden");
@@ -1271,6 +1364,7 @@ async function openBoard(stationName) {
     currentStation = stationName;
     currentTrainNo = null;
     currentView = "station-view";
+    stopBoardDirectionRotator();
     isFirstLoad = true;
     resetTableControls();
     elements.stationName.textContent = stationName.toUpperCase();
@@ -1301,6 +1395,7 @@ async function openTrainPanel(trainNoLocal) {
     currentView = "train-view";
     activeRequestId += 1;
     trainPanelNeedsFocus = true;
+    stopBoardDirectionRotator();
     clearTimeout(refreshTimer);
     elements.homeScreen.classList.add("hidden");
     elements.mainContent.classList.add("hidden");
