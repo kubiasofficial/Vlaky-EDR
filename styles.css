@@ -1399,6 +1399,26 @@ body::before {
     border-color: rgba(86, 130, 199, 0.6);
 }
 
+.retro-board-arrivals .retro-board-topline {
+    border-bottom-color: rgba(124, 186, 255, 0.5);
+}
+
+.retro-board-arrivals .retro-board-grid-head {
+    background: rgba(3, 30, 72, 0.98);
+    color: #9dd3ff;
+    border-color: rgba(105, 166, 233, 0.58);
+}
+
+.retro-board-departures .retro-board-topline {
+    border-bottom-color: rgba(255, 199, 105, 0.5);
+}
+
+.retro-board-departures .retro-board-grid-head {
+    background: rgba(37, 24, 3, 0.86);
+    color: #ffc85b;
+    border-color: rgba(191, 138, 48, 0.58);
+}
+
 .retro-row-departing {
     animation: retroBlink 1s steps(2, end) infinite;
 }

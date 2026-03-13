@@ -625,9 +625,31 @@ function collectBoardRows(stationName, liveData) {
 }
 
 function buildBoardRowsByType(rows, boardType) {
+    const now = Date.now();
+
+    const statusPriority = (row) => {
+        const stopIndex = row.stop?.indexOfPoint;
+        const currentIndex = row.currentIndex;
+        if (currentIndex === stopIndex) return 0; // In station first.
+        if (boardType === "departures" && currentIndex === stopIndex + 1) return 1; // Just departing.
+        return 2;
+    };
+
     return rows
         .filter((row) => isBoardCandidate(row, boardType))
-        .sort((first, second) => getBoardEventTime(first, boardType) - getBoardEventTime(second, boardType))
+        .sort((first, second) => {
+            const firstPriority = statusPriority(first);
+            const secondPriority = statusPriority(second);
+            if (firstPriority !== secondPriority) return firstPriority - secondPriority;
+
+            const firstTime = getBoardEventTime(first, boardType);
+            const secondTime = getBoardEventTime(second, boardType);
+            const firstDistance = Math.abs(firstTime - now);
+            const secondDistance = Math.abs(secondTime - now);
+
+            if (firstDistance !== secondDistance) return firstDistance - secondDistance;
+            return firstTime - secondTime;
+        })
         .slice(0, BOARD_MAX_ROWS);
 }
 
@@ -754,8 +776,8 @@ function renderSingleBoard(rows, boardType, stationName) {
     }
 
     return `
-        <section class="retro-board-panel">
-            <div class="retro-board">
+        <section class="retro-board-panel retro-board-panel-${boardType}">
+            <div class="retro-board retro-board-${boardType}">
                 <div class="retro-board-topline">
                     <div class="retro-route-title">${boardTitle} <span>${boardSubtitle}</span></div>
                     <div class="retro-station-name">${escapeHtml(stationName.toUpperCase())}</div>
