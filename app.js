@@ -48,7 +48,6 @@ const elements = {
     departuresBody: document.getElementById("departures-body"),
     backBtn: document.getElementById("back-btn"),
     trainBackBtn: document.getElementById("train-back-btn"),
-    viewToggle: document.getElementById("view-toggle"),
     clock: document.getElementById("clock"),
     trainPanelClock: document.getElementById("train-panel-clock"),
     trainPanelNumber: document.getElementById("train-panel-number"),
@@ -1103,16 +1102,6 @@ async function openDualBoards(stationName) {
     await updateBoardLoop();
 }
 
-function openRetroPage() {
-    if (!currentStation) {
-        alert("Nejdřív otevři stanici, pak můžeš přejít na Retro tabuli.");
-        return;
-    }
-
-    const station = encodeURIComponent(currentStation);
-    window.location.href = `retro.html?station=${station}`;
-}
-
 async function openTrainPanel(trainNoLocal) {
     currentTrainNo = String(trainNoLocal);
     currentStation = null;
@@ -1194,7 +1183,6 @@ function bindEvents() {
     elements.backBtn.addEventListener("click", goHome);
     elements.trainBackBtn.addEventListener("click", backToTrainHub);
     elements.boardViewBackBtn.addEventListener("click", backToBoardHub);
-    elements.viewToggle.addEventListener("click", openRetroPage);
 }
 
 async function init() {
