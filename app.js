@@ -330,6 +330,39 @@ function setActiveFilterChip(selectedFilter) {
     });
 }
 
+function getTrainControlInfo(liveTrain) {
+    const trainData = liveTrain?.TrainData || {};
+    const steamId = String(trainData.ControlledBySteamID || "").trim();
+    const xboxId = String(trainData.ControlledByXboxID || "").trim();
+    const playerName = String(
+        trainData.ControlledBySteamName ||
+        trainData.ControlledByPlayerName ||
+        trainData.ControlledByName ||
+        liveTrain?.ControlledBySteamName ||
+        liveTrain?.ControlledByPlayerName ||
+        ""
+    ).trim();
+
+    const hasSteam = steamId && steamId !== "0";
+    const hasXbox = xboxId && xboxId !== "0";
+    const isHuman = Boolean(playerName || hasSteam || hasXbox);
+
+    if (!isHuman) {
+        return {
+            shortLabel: "AI",
+            detailLabel: "Řídí AI",
+            cssClass: "control-ai"
+        };
+    }
+
+    const identity = playerName || (hasSteam ? `Steam ${steamId}` : `Xbox ${xboxId}`);
+    return {
+        shortLabel: "HRÁČ",
+        detailLabel: `Řídí hráč: ${identity}`,
+        cssClass: "control-player"
+    };
+}
+
 function rerenderCurrentStation() {
     if (!currentStation || !lastLiveData || !lastPositionsData) return;
     renderTable(lastLiveData, lastPositionsData);
@@ -823,6 +856,7 @@ function renderTable(liveData, posData) {
         const originStation = getCleanName(item.timetable, stopIndex, -1);
         const nextStation = getCleanName(item.timetable, stopIndex, 1);
         const classBadgeClass = getTrainClassBadgeClass(classCode);
+        const controlInfo = getTrainControlInfo(live);
         let status = "PŘIJEDE";
         let rowClass = "";
         let statusClass = "status-arriving";
@@ -857,12 +891,14 @@ function renderTable(liveData, posData) {
                 <div class="cell" data-label="Kam pojede"><b>${escapeHtml(nextStation || "-")}</b></div>
                 <div class="cell" data-label="Nást./Kol.">${escapeHtml(stop.platform || "-")}/${escapeHtml(stop.track || "-")}</div>
                 <div class="cell ${delay > 0 ? "delay-high" : "delay-ok"}" data-label="Zpoždění">+${delay} min</div>
+                <div class="cell control-cell" data-label="Řízení"><b class="${controlInfo.cssClass}">${escapeHtml(controlInfo.shortLabel)}</b></div>
                 <div class="cell status-cell ${statusClass}" data-label="Stav"><b>${status}</b></div>
             </div>
             <div id="det-${escapeHtml(item.trainNoLocal)}" class="train-detail ${isExpanded ? "" : "hidden"}">
                 <div class="detail-topbar">
                     <div class="speed-badge">GPS rychlost: <b>${speed} km/h</b></div>
                     <div class="speed-badge">Souprava: <b>${escapeHtml(item.trainName)} ${escapeHtml(item.trainNoLocal)}</b></div>
+                    <div class="speed-badge">${escapeHtml(controlInfo.detailLabel)}</div>
                     ${vehicles.leadVehicle ? `<div class="speed-badge vehicle-badge">Lok/Jednotka: <b>${escapeHtml(vehicles.leadVehicle)}</b></div>` : ""}
                 </div>
                 ${vehicles.consist ? `<div class="consist-line"><span>Sestava:</span> ${escapeHtml(vehicles.consist)}</div>` : ""}

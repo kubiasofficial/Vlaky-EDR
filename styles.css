@@ -798,7 +798,7 @@ body::before {
 #table-header,
 .train-row {
     display: grid;
-    grid-template-columns: 1.05fr 1.1fr 0.72fr 1.2fr 1.3fr 0.85fr 0.9fr 0.95fr;
+    grid-template-columns: 1.05fr 1.1fr 0.72fr 1.2fr 1.3fr 0.85fr 0.9fr 0.78fr 0.95fr;
     gap: 10px;
 }
 
@@ -981,6 +981,29 @@ body::before {
     color: #fff1e8;
     background: rgba(201, 88, 52, 0.37);
     border: 1px solid rgba(255, 166, 140, 0.45);
+}
+
+.control-cell b {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 72px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+}
+
+.control-ai {
+    color: #d8e9ff;
+    background: rgba(102, 138, 187, 0.3);
+    border: 1px solid rgba(170, 198, 235, 0.42);
+}
+
+.control-player {
+    color: #f9ffe8;
+    background: rgba(104, 157, 61, 0.36);
+    border: 1px solid rgba(183, 237, 132, 0.5);
 }
 
 .delay-high {
