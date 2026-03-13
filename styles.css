@@ -629,6 +629,130 @@ body::before {
     color: #97bbeb;
 }
 
+.train-station-cell,
+.train-transit-station-cell {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
+
+.tt-indicator {
+    position: relative;
+    flex: 0 0 14px;
+    width: 14px;
+    height: 14px;
+    border-radius: 999px;
+    border: 2px solid rgba(162, 194, 228, 0.46);
+    background: rgba(162, 194, 228, 0.12);
+}
+
+.tt-indicator-idle {
+    opacity: 0.65;
+}
+
+.tt-indicator-past {
+    border-color: rgba(110, 153, 194, 0.35);
+    background: rgba(110, 153, 194, 0.18);
+}
+
+.tt-indicator-next {
+    border-color: rgba(243, 205, 86, 0.78);
+    background: rgba(243, 205, 86, 0.24);
+    box-shadow: 0 0 0 4px rgba(243, 205, 86, 0.08);
+}
+
+.tt-indicator-pin {
+    border-color: rgba(118, 191, 255, 0.96);
+    background: linear-gradient(180deg, #9ad0ff, #2c84f4);
+    box-shadow: 0 0 0 5px rgba(76, 152, 255, 0.16), 0 0 18px rgba(76, 152, 255, 0.65);
+    animation: stationPinPulse 1.2s ease-in-out infinite;
+}
+
+.tt-indicator-pin::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    bottom: -8px;
+    width: 2px;
+    height: 8px;
+    transform: translateX(-50%);
+    background: linear-gradient(180deg, rgba(154, 208, 255, 0.95), rgba(44, 132, 244, 0.25));
+    border-radius: 999px;
+}
+
+.train-transit-row {
+    display: grid;
+    grid-template-columns: 0.85fr 2.2fr 0.8fr 0.9fr;
+    gap: 12px;
+    align-items: center;
+    padding: 10px 10px;
+    border-radius: 12px;
+    border: 1px dashed rgba(242, 205, 86, 0.38);
+    background: linear-gradient(90deg, rgba(242, 205, 86, 0.14), rgba(18, 54, 120, 0.16));
+    color: #fff0b3;
+}
+
+.train-transit-time {
+    color: #ffd97a;
+}
+
+.train-transit-copy {
+    display: grid;
+    gap: 2px;
+}
+
+.train-transit-copy strong {
+    color: #fff1b8;
+}
+
+.train-transit-copy span {
+    color: #d6e6ff;
+}
+
+.train-transit-arrow-group {
+    display: flex;
+    gap: 5px;
+}
+
+.train-transit-arrow {
+    position: relative;
+    width: 14px;
+    height: 10px;
+    opacity: 0.18;
+    animation: transitBlink 1.1s linear infinite;
+}
+
+.train-transit-arrow::before,
+.train-transit-arrow::after {
+    content: "";
+    position: absolute;
+    right: 0;
+    width: 9px;
+    height: 2px;
+    border-radius: 999px;
+    background: currentColor;
+    color: #ffd86a;
+}
+
+.train-transit-arrow::before {
+    top: 1px;
+    transform: rotate(35deg);
+}
+
+.train-transit-arrow::after {
+    bottom: 1px;
+    transform: rotate(-35deg);
+}
+
+.train-transit-arrow:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.train-transit-arrow:nth-child(3) {
+    animation-delay: 0.4s;
+}
+
 .train-tt-past {
     opacity: 0.72;
 }
@@ -641,6 +765,26 @@ body::before {
 .train-tt-next {
     border-color: rgba(243, 205, 86, 0.42);
     background: rgba(243, 205, 86, 0.1);
+}
+
+@keyframes transitBlink {
+    0%, 100% {
+        opacity: 0.15;
+        transform: translateX(0);
+    }
+    40% {
+        opacity: 1;
+        transform: translateX(4px);
+    }
+}
+
+@keyframes stationPinPulse {
+    0%, 100% {
+        box-shadow: 0 0 0 5px rgba(76, 152, 255, 0.16), 0 0 18px rgba(76, 152, 255, 0.52);
+    }
+    50% {
+        box-shadow: 0 0 0 8px rgba(76, 152, 255, 0.12), 0 0 24px rgba(76, 152, 255, 0.85);
+    }
 }
 
 .sticky-wrapper {

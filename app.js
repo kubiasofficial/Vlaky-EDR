@@ -86,6 +86,7 @@ let lastTrainHubItems = [];
 let currentTrainNo = null;
 let currentBoardStation = null;
 let currentView = "landing";
+let trainPanelNeedsFocus = false;
 const steamPlayerNameCache = new Map();
 const steamPlayerNamePending = new Set();
 
@@ -800,6 +801,18 @@ function getTrainContext(trainNoLocal, liveData, positionsData) {
     };
 }
 
+function focusActiveTrainTimetableRow() {
+    const targetRow = elements.trainTimetableBody?.querySelector('[data-transit-stop="true"]')
+        || elements.trainTimetableBody?.querySelector('[data-current-stop="true"]')
+        || elements.trainTimetableBody?.querySelector('[data-next-stop="true"]');
+
+    if (!targetRow) return;
+
+    requestAnimationFrame(() => {
+        targetRow.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+}
+
 function renderTrainPanel(trainContext) {
     if (!trainContext) {
         elements.trainTimetableBody.innerHTML = '<div class="empty-panel">Nepodařilo se najít data vlaku na CZ1.</div>';
@@ -823,6 +836,7 @@ function renderTrainPanel(trainContext) {
     } = trainContext;
 
     const trainNumberLabel = `${liveTrain.TrainName || edrTrain.trainName} ${liveTrain.TrainNoLocal}`;
+    const shouldShowTransitRow = !isAtStation && previousStop && nextStop && previousStop.indexOfPoint !== nextStop.indexOfPoint;
 
     elements.trainPanelNumber.textContent = trainNumberLabel;
     elements.trainSideNumber.textContent = String(liveTrain.TrainNoLocal);
@@ -861,16 +875,53 @@ function renderTrainPanel(trainContext) {
                 rowClass = rowClass === "train-tt-current" ? rowClass : "train-tt-next";
             }
 
-            return `
-                <div class="train-timetable-row ${rowClass}">
+            const isCurrentStop = stop.indexOfPoint === currentIndex;
+            const isNextStop = Boolean(nextStop) && stop.indexOfPoint === nextStop.indexOfPoint;
+            const isPinnedStop = isAtStation && isCurrentStop;
+            const shouldRenderTransitRow = shouldShowTransitRow && isNextStop;
+            const indicatorClass = isPinnedStop
+                ? "tt-indicator-pin"
+                : isNextStop
+                    ? "tt-indicator-next"
+                    : stop.indexOfPoint < currentIndex
+                        ? "tt-indicator-past"
+                        : "tt-indicator-idle";
+            const transitMarkup = shouldRenderTransitRow
+                ? `
+                    <div class="train-transit-row" data-transit-stop="true">
+                        <div class="train-transit-time">--:--</div>
+                        <div class="train-transit-station-cell">
+                            <div class="train-transit-arrow-group" aria-hidden="true">
+                                <span class="train-transit-arrow"></span>
+                                <span class="train-transit-arrow"></span>
+                                <span class="train-transit-arrow"></span>
+                            </div>
+                            <div class="train-transit-copy">
+                                <strong>Prave mezi stanicemi</strong>
+                                <span>${escapeHtml(previousStop.nameForPerson)} -> ${escapeHtml(nextStop.nameForPerson)}</span>
+                            </div>
+                        </div>
+                        <div>-/-</div>
+                        <div>Presun</div>
+                    </div>
+                `
+                : "";
+
+            return `${transitMarkup}
+                <div class="train-timetable-row ${rowClass}" data-current-stop="${isCurrentStop}" data-next-stop="${isNextStop}">
                     <div>${fmt(stop.arrivalTime)}<br><span>${fmt(stop.departureTime)}</span></div>
-                    <div><strong>${escapeHtml(stop.nameForPerson)}</strong></div>
+                    <div class="train-station-cell"><span class="tt-indicator ${indicatorClass}" aria-hidden="true"></span><strong>${escapeHtml(stop.nameForPerson)}</strong></div>
                     <div>${escapeHtml(stop.platform || "-")}/${escapeHtml(stop.track || "-")}</div>
                     <div>${status}</div>
                 </div>
             `;
         })
         .join("");
+
+    if (trainPanelNeedsFocus) {
+        focusActiveTrainTimetableRow();
+        trainPanelNeedsFocus = false;
+    }
 }
 
 function updateKpis(rows) {
@@ -1216,6 +1267,7 @@ async function openTrainPanel(trainNoLocal) {
     currentStation = null;
     currentView = "train-view";
     activeRequestId += 1;
+    trainPanelNeedsFocus = true;
     clearTimeout(refreshTimer);
     elements.homeScreen.classList.add("hidden");
     elements.mainContent.classList.add("hidden");
