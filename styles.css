@@ -1195,6 +1195,41 @@ body::before {
     color: #edf3ff;
 }
 
+.retro-board-grid .train-class-badge {
+    margin-right: 6px;
+    vertical-align: middle;
+}
+
+.retro-board-grid.retro-class-premium {
+    border-color: rgba(154, 208, 255, 0.8);
+    background: linear-gradient(180deg, rgba(43, 119, 232, 0.96), rgba(20, 70, 176, 0.96));
+}
+
+.retro-board-grid.retro-class-mpe {
+    border-color: rgba(255, 156, 195, 0.8);
+    background: linear-gradient(180deg, rgba(179, 53, 103, 0.96), rgba(127, 31, 67, 0.96));
+}
+
+.retro-board-grid.retro-class-tlk {
+    border-color: rgba(255, 214, 138, 0.85);
+    background: linear-gradient(180deg, rgba(176, 106, 38, 0.96), rgba(131, 74, 21, 0.96));
+}
+
+.retro-board-grid.retro-class-regional {
+    border-color: rgba(148, 234, 191, 0.8);
+    background: linear-gradient(180deg, rgba(31, 132, 101, 0.95), rgba(18, 92, 71, 0.95));
+}
+
+.retro-board-grid.retro-class-night {
+    border-color: rgba(180, 193, 255, 0.78);
+    background: linear-gradient(180deg, rgba(66, 85, 164, 0.95), rgba(43, 59, 129, 0.96));
+}
+
+.retro-board-grid.retro-class-other {
+    border-color: rgba(168, 190, 217, 0.72);
+    background: linear-gradient(180deg, rgba(60, 89, 124, 0.95), rgba(38, 61, 90, 0.96));
+}
+
 .retro-board-grid-head {
     font-size: 0.74rem;
     letter-spacing: 0.08em;

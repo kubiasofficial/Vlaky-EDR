@@ -570,14 +570,18 @@ function renderSingleBoard(rows, boardType, stationName) {
                     const stop = row.stop;
                     const stopIndex = item.timetable.indexOf(stop);
                     const delay = row.delayMinutes || 0;
+                    const classCode = getTrainClassCode(item.trainName);
+                    const badgeClass = getTrainClassBadgeClass(classCode);
+                    const boardClass = `retro-class-${badgeClass.replace("class-", "")}`;
                     const status = getBoardStatus(row, boardType);
                     const directionName = boardType === "arrivals" ? getCleanName(item.timetable, stopIndex, -1) : getCleanName(item.timetable, stopIndex, 1);
-                    const rowClass = status === "ODJIZDI" ? "retro-row-departing" : "";
+                    const rowClass = `${boardClass} ${status === "ODJIZDI" ? "retro-row-departing" : ""}`.trim();
 
                     return `
                         <div class="retro-board-grid ${rowClass}">
                             <div class="retro-time-cell">${fmt(boardType === "arrivals" ? stop?.arrivalTime || stop?.departureTime : stop?.departureTime || stop?.arrivalTime)}</div>
                             <div class="retro-train-cell">
+                                <span class="train-class-badge ${badgeClass}">${escapeHtml(classCode)}</span>
                                 <strong>${escapeHtml(item.trainName)} ${escapeHtml(item.trainNoLocal)}</strong>
                                 <span>${escapeHtml(getCleanName(item.timetable, stopIndex, -1))}</span>
                             </div>
