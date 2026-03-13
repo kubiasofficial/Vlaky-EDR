@@ -18,7 +18,7 @@ const API_STATIONS = `${API_SIMRAIL_BASE}/stations-open?serverCode=${SERVER}`;
 const API_TRAINS = `${API_SIMRAIL_BASE}/trains-open?serverCode=${SERVER}`;
 const API_POSITIONS = `${API_SIMRAIL_BASE}/train-positions-open?serverCode=${SERVER}`;
 const API_EDR = `${API_AWS_BASE}/getEDRTimetables?serverCode=${SERVER}`;
-const API_STEAM_PROFILE_BASE = IS_LOCALHOST ? "http://localhost:8080/https://steamcommunity.com/profiles" : "/api-steam";
+const API_STEAM_NAME = IS_LOCALHOST ? "http://localhost:8080/steam-name" : "/api/steam-name";
 
 const elements = {
     homeScreen: document.getElementById("home-screen"),
@@ -386,9 +386,9 @@ function getTrainControlInfo(liveTrain) {
     };
 }
 
-function getSteamProfileUrl(steamId) {
+function getSteamNameUrl(steamId) {
     const safeId = encodeURIComponent(String(steamId || "").trim());
-    return `${API_STEAM_PROFILE_BASE}/${safeId}/?xml=1`;
+    return `${API_STEAM_NAME}?steamId=${safeId}`;
 }
 
 async function fetchSteamPlayerName(steamId) {
@@ -399,16 +399,11 @@ async function fetchSteamPlayerName(steamId) {
 
     steamPlayerNamePending.add(normalizedId);
     try {
-        const response = await fetch(getSteamProfileUrl(normalizedId));
+        const response = await fetch(getSteamNameUrl(normalizedId));
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
-        const xmlRaw = await response.text();
-        const parser = new DOMParser();
-        const xmlDoc = parser.parseFromString(xmlRaw, "application/xml");
-        const parserError = xmlDoc.querySelector("parsererror");
-        const parsedName = parserError ? "" : String(xmlDoc.querySelector("steamID")?.textContent || "").trim();
-        const regexName = (xmlRaw.match(/<steamID><!\[CDATA\[(.*?)\]\]><\/steamID>/i)?.[1] || xmlRaw.match(/<steamID>(.*?)<\/steamID>/i)?.[1] || "").trim();
-        const name = parsedName || regexName;
+        const payload = await response.json();
+        const name = String(payload?.name || "").trim();
         const finalName = name && name.toLowerCase() !== "private profile" ? name : null;
         if (finalName) {
             steamPlayerNameCache.set(normalizedId, finalName);
