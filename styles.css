@@ -1090,42 +1090,60 @@ body::before {
     border-color: rgba(255, 122, 109, 0.42);
 }
 
-.modal {
-    position: fixed;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-    background: rgba(1, 11, 24, 0.76);
-    backdrop-filter: blur(8px);
-    z-index: 60;
+.retro-page-body {
+    min-height: 100vh;
 }
 
-.modal-content {
-    position: relative;
-    width: min(1200px, 100%);
-    max-height: 88vh;
-    overflow: auto;
-    padding: 24px;
-    border-radius: 18px;
-    border: 1px solid rgba(255, 178, 88, 0.3);
-    background: linear-gradient(180deg, #061834, #041020);
+.retro-page-wrap {
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    padding: 22px;
+}
+
+.retro-page-shell {
+    width: min(1220px, 100%);
+    padding: 18px;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 178, 88, 0.28);
+    background: linear-gradient(180deg, rgba(6, 24, 52, 0.94), rgba(4, 16, 32, 0.95));
     box-shadow: var(--shadow);
 }
 
-.retro-modal {
-    color: #ffe07f;
-    font-family: "Bahnschrift", "Arial Narrow", Consolas, monospace;
+.retro-page-header {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 14px;
 }
 
-.close {
-    position: absolute;
-    top: 12px;
-    right: 18px;
-    font-size: 2rem;
-    color: #fff6d2;
-    cursor: pointer;
+.retro-page-meta {
+    min-width: 0;
+}
+
+.retro-page-label {
+    color: #ffd88f;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    font-size: 0.78rem;
+}
+
+#retro-page-station {
+    margin: 4px 0 0;
+    text-transform: uppercase;
+    font-family: "Oswald", "Segoe UI", sans-serif;
+    font-size: clamp(1.2rem, 4vw, 2rem);
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.retro-page-clock {
+    font-family: "Oswald", "Segoe UI", sans-serif;
+    letter-spacing: 0.06em;
+    font-size: 1.25rem;
 }
 
 .retro-board {
@@ -1330,8 +1348,7 @@ body::before {
 
     .landing-shell,
     .welcome-box,
-    .main-header,
-    .modal-content {
+    .main-header {
         padding: 20px;
         border-radius: 18px;
     }
@@ -1395,5 +1412,17 @@ body::before {
     .retro-board-topline,
     .retro-board-grid {
         grid-template-columns: 1fr 1fr;
+    }
+
+    .retro-page-wrap {
+        padding: 12px;
+    }
+
+    .retro-page-header {
+        grid-template-columns: 1fr;
+    }
+
+    .retro-page-clock {
+        justify-self: start;
     }
 }

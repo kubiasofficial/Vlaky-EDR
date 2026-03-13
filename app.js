@@ -53,9 +53,6 @@ const elements = {
     trainLiveBanner: document.getElementById("train-live-banner"),
     trainLiveStation: document.getElementById("train-live-station"),
     trainTimetableBody: document.getElementById("train-timetable-body"),
-    boardModal: document.getElementById("board-modal"),
-    closeBoard: document.getElementById("close-board"),
-    boardContainer: document.getElementById("modal-board-container"),
     kpiActive: document.getElementById("kpi-active"),
     kpiStation: document.getElementById("kpi-station"),
     kpiDelay: document.getElementById("kpi-delay"),
@@ -85,10 +82,6 @@ const uiState = {
     sortMode: "time",
     trainHubQuery: ""
 };
-
-const RETRO_MAX_ROWS = 8;
-const RETRO_PAST_WINDOW_MIN = 8;
-const RETRO_FUTURE_WINDOW_MIN = 120;
 
 function showLoading() {
     if (document.getElementById("loading-spinner")) return;
@@ -392,15 +385,6 @@ function computeTrainDelayMinutes(train, stop, currentIndex) {
     return 0;
 }
 
-function isRetroCandidate(row) {
-    if (row.live) {
-        return row.currentIndex >= row.stop.indexOfPoint - 1 && row.currentIndex <= row.stop.indexOfPoint + 1;
-    }
-    const now = Date.now();
-    const plan = getStopPlanDate(row.stop).getTime();
-    return plan >= now - RETRO_PAST_WINDOW_MIN * 60 * 1000 && plan <= now + RETRO_FUTURE_WINDOW_MIN * 60 * 1000;
-}
-
 function collectStationRows(liveData) {
     const target = norm(currentStation);
     if (!target) return [];
@@ -626,58 +610,6 @@ function updateKpis(rows) {
     elements.kpiDelay.textContent = `+${maxDelay} min`;
 }
 
-function renderRetroBoard() {
-    const retroRows = lastStationRows.filter(isRetroCandidate).slice(0, RETRO_MAX_ROWS);
-
-    if (!currentStation || !retroRows.length) {
-        elements.boardContainer.innerHTML = '<div class="retro-empty">Retro tabule je dostupná po otevření stanice s daty.</div>';
-        return;
-    }
-
-    elements.boardContainer.innerHTML = `
-        <div class="retro-board">
-            <div class="retro-board-topline">
-                <div class="retro-route-title">Odjezdy <span>Departures</span></div>
-                <div class="retro-station-name">${escapeHtml(currentStation.toUpperCase())}</div>
-                <div class="retro-clock">${new Date().toLocaleTimeString("cs-CZ", { hour: "2-digit", minute: "2-digit" })}</div>
-            </div>
-            <div class="retro-board-grid retro-board-grid-head">
-                <div>Čas</div><div>Vlak</div><div>Směr</div><div>Nástupiště</div><div>Zpoždění</div><div>Stav</div>
-            </div>
-            ${retroRows.map((row) => {
-                const item = row.train;
-                const stop = row.stop;
-                const live = row.live;
-                const currentIndex = row.currentIndex;
-                const delay = row.delayMinutes || 0;
-                const stopIndex = item.timetable.indexOf(stop);
-                const origin = getCleanName(item.timetable, stopIndex, -1);
-                const nextStation = getCleanName(item.timetable, stopIndex, 1);
-                let status = "PŘIJEDE";
-                let retroRowClass = "";
-                if (currentIndex === stop?.indexOfPoint) status = "VE STANICI";
-                else if (currentIndex === (stop?.indexOfPoint ?? -1) + 1) {
-                    status = "ODJÍŽDÍ";
-                    retroRowClass = "retro-row-departing";
-                }
-                return `
-                    <div class="retro-board-grid ${retroRowClass}">
-                        <div class="retro-time-cell">${fmt(stop?.departureTime || stop?.arrivalTime)}</div>
-                        <div class="retro-train-cell">
-                            <strong>${escapeHtml(item.trainName)} ${escapeHtml(item.trainNoLocal)}</strong>
-                            <span>${escapeHtml(origin)}</span>
-                        </div>
-                        <div class="retro-dir-cell">${escapeHtml(nextStation || "-")}</div>
-                        <div class="retro-platform-cell">${escapeHtml(stop?.platform || "-")}/${escapeHtml(stop?.track || "-")}</div>
-                        <div class="retro-delay-cell">+${delay}</div>
-                        <div class="retro-status-cell">${status}</div>
-                    </div>
-                `;
-            }).join("")}
-        </div>
-    `;
-}
-
 function renderTable(liveData, posData) {
     if (!currentStation || !cachedEDR.length) return;
 
@@ -776,10 +708,6 @@ function renderTable(liveData, posData) {
 
     updateKpis(rows);
 
-    if (!elements.boardModal.classList.contains("hidden")) {
-        renderRetroBoard();
-    }
-
     if (isFirstLoad) {
         const activeRow = elements.departuresBody.querySelector(".row-at-station") || elements.departuresBody.querySelector(".row-departing") || elements.departuresBody.querySelector(".train-row:not(.row-departed)");
         if (activeRow) activeRow.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -814,7 +742,6 @@ function goHome() {
     elements.stationHub.classList.remove("hidden");
     elements.trainHub.classList.add("hidden");
     elements.departuresBody.innerHTML = "";
-    elements.boardModal.classList.add("hidden");
 }
 
 function openStationHub() {
@@ -926,6 +853,16 @@ async function openBoard(stationName) {
     await updateLoop();
 }
 
+function openRetroPage() {
+    if (!currentStation) {
+        alert("Nejdřív otevři stanici, pak můžeš přejít na Retro tabuli.");
+        return;
+    }
+
+    const station = encodeURIComponent(currentStation);
+    window.location.href = `retro.html?station=${station}`;
+}
+
 async function openTrainPanel(trainNoLocal) {
     currentTrainNo = String(trainNoLocal);
     currentStation = null;
@@ -992,18 +929,7 @@ function bindEvents() {
 
     elements.backBtn.addEventListener("click", goHome);
     elements.trainBackBtn.addEventListener("click", backToTrainHub);
-    elements.viewToggle.addEventListener("click", () => {
-        renderRetroBoard();
-        elements.boardModal.classList.remove("hidden");
-    });
-    elements.closeBoard.addEventListener("click", () => elements.boardModal.classList.add("hidden"));
-    elements.boardModal.addEventListener("click", (event) => {
-        if (event.target === elements.boardModal) elements.boardModal.classList.add("hidden");
-    });
-
-    document.addEventListener("keydown", (event) => {
-        if (event.key === "Escape") elements.boardModal.classList.add("hidden");
-    });
+    elements.viewToggle.addEventListener("click", openRetroPage);
 }
 
 async function init() {
