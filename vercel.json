@@ -7,6 +7,10 @@
     {
       "source": "/api-aws/:path*",
       "destination": "https://api1.aws.simrail.eu:8082/api/:path*"
+    },
+    {
+      "source": "/api-steam/:steamId*",
+      "destination": "https://steamcommunity.com/profiles/:steamId*"
     }
   ]
 }

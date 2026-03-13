@@ -18,6 +18,7 @@ const API_STATIONS = `${API_SIMRAIL_BASE}/stations-open?serverCode=${SERVER}`;
 const API_TRAINS = `${API_SIMRAIL_BASE}/trains-open?serverCode=${SERVER}`;
 const API_POSITIONS = `${API_SIMRAIL_BASE}/train-positions-open?serverCode=${SERVER}`;
 const API_EDR = `${API_AWS_BASE}/getEDRTimetables?serverCode=${SERVER}`;
+const API_STEAM_PROFILE_BASE = IS_LOCALHOST ? "http://localhost:8080/https://steamcommunity.com/profiles" : "/api-steam";
 
 const elements = {
     homeScreen: document.getElementById("home-screen"),
@@ -85,6 +86,8 @@ let lastTrainHubItems = [];
 let currentTrainNo = null;
 let currentBoardStation = null;
 let currentView = "landing";
+const steamPlayerNameCache = new Map();
+const steamPlayerNamePending = new Set();
 
 const BOARD_MAX_ROWS = 8;
 const BOARD_PAST_WINDOW_MIN = 10;
@@ -345,6 +348,7 @@ function getTrainControlInfo(liveTrain) {
 
     const hasSteam = steamId && steamId !== "0";
     const hasXbox = xboxId && xboxId !== "0";
+    const steamNameFromCache = hasSteam ? String(steamPlayerNameCache.get(steamId) || "").trim() : "";
     const isHuman = Boolean(playerName || hasSteam || hasXbox);
 
     if (!isHuman) {
@@ -355,12 +359,63 @@ function getTrainControlInfo(liveTrain) {
         };
     }
 
-    const identity = playerName || (hasSteam ? `Steam ${steamId}` : `Xbox ${xboxId}`);
+    const resolvedName = playerName || steamNameFromCache;
     return {
-        shortLabel: "HRÁČ",
-        detailLabel: `Řídí hráč: ${identity}`,
+        shortLabel: resolvedName ? `Hráč: ${resolvedName}` : "Hráč",
+        detailLabel: resolvedName ? `Řídí hráč: ${resolvedName}` : "Řídí hráč (jméno nedostupné)",
         cssClass: "control-player"
     };
+}
+
+function getSteamProfileUrl(steamId) {
+    const safeId = encodeURIComponent(String(steamId || "").trim());
+    return `${API_STEAM_PROFILE_BASE}/${safeId}/?xml=1`;
+}
+
+async function fetchSteamPlayerName(steamId) {
+    const normalizedId = String(steamId || "").trim();
+    if (!normalizedId || normalizedId === "0") return null;
+    if (steamPlayerNameCache.has(normalizedId)) return steamPlayerNameCache.get(normalizedId);
+    if (steamPlayerNamePending.has(normalizedId)) return null;
+
+    steamPlayerNamePending.add(normalizedId);
+    try {
+        const response = await fetch(getSteamProfileUrl(normalizedId));
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+        const xmlRaw = await response.text();
+        const parser = new DOMParser();
+        const xmlDoc = parser.parseFromString(xmlRaw, "application/xml");
+        const parserError = xmlDoc.querySelector("parsererror");
+        if (parserError) throw new Error("Invalid XML response");
+
+        const name = String(xmlDoc.querySelector("steamID")?.textContent || "").trim();
+        const finalName = name && name.toLowerCase() !== "private profile" ? name : null;
+        if (finalName) {
+            steamPlayerNameCache.set(normalizedId, finalName);
+        }
+        return finalName;
+    } catch {
+        return null;
+    } finally {
+        steamPlayerNamePending.delete(normalizedId);
+    }
+}
+
+async function resolveSteamNamesForRows(rows) {
+    const steamIds = Array.from(new Set(
+        (rows || [])
+            .map((row) => String(row?.live?.TrainData?.ControlledBySteamID || "").trim())
+            .filter((steamId) => steamId && steamId !== "0" && !steamPlayerNameCache.has(steamId))
+    ));
+
+    if (!steamIds.length) return;
+
+    const names = await Promise.all(steamIds.map((steamId) => fetchSteamPlayerName(steamId)));
+    const hasAnyResolvedName = names.some((entry) => Boolean(entry));
+    if (hasAnyResolvedName) {
+        rerenderCurrentStation();
+    }
 }
 
 function rerenderCurrentStation() {
@@ -891,7 +946,7 @@ function renderTable(liveData, posData) {
                 <div class="cell" data-label="Kam pojede"><b>${escapeHtml(nextStation || "-")}</b></div>
                 <div class="cell" data-label="Nást./Kol.">${escapeHtml(stop.platform || "-")}/${escapeHtml(stop.track || "-")}</div>
                 <div class="cell ${delay > 0 ? "delay-high" : "delay-ok"}" data-label="Zpoždění">+${delay} min</div>
-                <div class="cell control-cell" data-label="Řízení"><b class="${controlInfo.cssClass}">${escapeHtml(controlInfo.shortLabel)}</b></div>
+                <div class="cell control-cell" data-label="Řízení"><b class="${controlInfo.cssClass}" title="${escapeHtml(controlInfo.detailLabel)}">${escapeHtml(controlInfo.shortLabel)}</b></div>
                 <div class="cell status-cell ${statusClass}" data-label="Stav"><b>${status}</b></div>
             </div>
             <div id="det-${escapeHtml(item.trainNoLocal)}" class="train-detail ${isExpanded ? "" : "hidden"}">
@@ -1069,6 +1124,7 @@ async function updateLoop() {
     }
 
     renderTable(liveData, positionsData);
+    resolveSteamNamesForRows(lastStationRows).catch(() => null);
     refreshTimer = setTimeout(updateLoop, 15000);
 }
 

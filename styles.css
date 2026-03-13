@@ -987,11 +987,14 @@ body::before {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-width: 72px;
+    max-width: 100%;
     padding: 4px 10px;
     border-radius: 999px;
     font-size: 0.72rem;
     letter-spacing: 0.08em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .control-ai {
