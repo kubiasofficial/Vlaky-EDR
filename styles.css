@@ -1383,9 +1383,22 @@ body::before {
 }
 
 .retro-route-badge {
-    display: block;
-    width: 100%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-start;
+    width: fit-content;
     max-width: 100%;
+    min-height: 20px;
+    padding: 0 8px;
+    border-radius: 7px;
+    border: 1px solid rgba(255, 255, 255, 0.45);
+    background: linear-gradient(180deg, rgba(232, 242, 255, 0.95), rgba(163, 198, 244, 0.92));
+    color: #0b3467;
+    font-size: 0.6rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.45);
     margin-right: 0;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -1539,6 +1552,7 @@ body::before {
     display: block;
     font-size: 1.18rem;
     line-height: 1;
+    text-shadow: 0 1px 0 rgba(0, 0, 0, 0.35);
 }
 
 .retro-delay-cell span {
@@ -1576,6 +1590,7 @@ body::before {
     padding: 5px 10px;
     font-size: 0.77rem;
     letter-spacing: 0.08em;
+    text-shadow: 0 1px 0 rgba(0, 0, 0, 0.35);
 }
 
 .retro-status-arriving {
