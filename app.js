@@ -333,6 +333,25 @@ function setActiveFilterChip(selectedFilter) {
     });
 }
 
+function getFallbackPlayerLabel(trainData, steamNameFromCache) {
+    const steamId = String(trainData?.ControlledBySteamID || "").trim();
+    const xboxId = String(trainData?.ControlledByXboxID || "").trim();
+
+    if (steamNameFromCache) {
+        return steamNameFromCache;
+    }
+
+    if (steamId && steamId !== "0") {
+        return `Steam ${steamId}`;
+    }
+
+    if (xboxId && xboxId !== "0") {
+        return `Xbox ${xboxId}`;
+    }
+
+    return "Hráč";
+}
+
 function getTrainControlInfo(liveTrain) {
     const trainData = liveTrain?.TrainData || {};
     const steamId = String(trainData.ControlledBySteamID || "").trim();
@@ -359,10 +378,10 @@ function getTrainControlInfo(liveTrain) {
         };
     }
 
-    const resolvedName = playerName || steamNameFromCache;
+    const resolvedName = playerName || getFallbackPlayerLabel(trainData, steamNameFromCache);
     return {
-        shortLabel: resolvedName ? `Hráč: ${resolvedName}` : "Hráč",
-        detailLabel: resolvedName ? `Řídí hráč: ${resolvedName}` : "Řídí hráč (jméno nedostupné)",
+        shortLabel: `Hráč: ${resolvedName}`,
+        detailLabel: `Řídí hráč: ${resolvedName}`,
         cssClass: "control-player"
     };
 }
@@ -387,9 +406,9 @@ async function fetchSteamPlayerName(steamId) {
         const parser = new DOMParser();
         const xmlDoc = parser.parseFromString(xmlRaw, "application/xml");
         const parserError = xmlDoc.querySelector("parsererror");
-        if (parserError) throw new Error("Invalid XML response");
-
-        const name = String(xmlDoc.querySelector("steamID")?.textContent || "").trim();
+        const parsedName = parserError ? "" : String(xmlDoc.querySelector("steamID")?.textContent || "").trim();
+        const regexName = (xmlRaw.match(/<steamID><!\[CDATA\[(.*?)\]\]><\/steamID>/i)?.[1] || xmlRaw.match(/<steamID>(.*?)<\/steamID>/i)?.[1] || "").trim();
+        const name = parsedName || regexName;
         const finalName = name && name.toLowerCase() !== "private profile" ? name : null;
         if (finalName) {
             steamPlayerNameCache.set(normalizedId, finalName);
