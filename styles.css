@@ -1393,16 +1393,21 @@ body::before {
     border-radius: 7px;
     border: 1px solid rgba(255, 255, 255, 0.45);
     background: linear-gradient(180deg, rgba(232, 242, 255, 0.95), rgba(163, 198, 244, 0.92));
-    color: #0b3467;
+    color: #0a0a0a;
     font-size: 0.6rem;
     font-weight: 800;
     letter-spacing: 0.06em;
     text-transform: uppercase;
-    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.45);
+    text-shadow: none;
     margin-right: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+.retro-board-grid .train-class-badge {
+    color: #0a0a0a;
+    text-shadow: none;
 }
 
 .retro-board-grid-head {
