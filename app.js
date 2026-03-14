@@ -853,30 +853,49 @@ function renderDualBoards(stationName, liveData) {
 }
 
 function buildTrainHubItems(liveData) {
-    return (liveData?.data || [])
-        .map((liveTrain) => {
-            const edrTrain = cachedEDR.find((entry) => String(entry.trainNoLocal) === String(liveTrain.TrainNoLocal));
-            const relevantStops = getRelevantTimetable(edrTrain?.timetable || []);
-            const vehicles = parseVehicles(liveTrain.Vehicles);
-            const classCode = getTrainClassCode(liveTrain.TrainName);
+    const liveRows = Array.isArray(liveData?.data) ? liveData.data : [];
 
-            return {
-                liveTrain,
-                edrTrain,
-                trainNoLocal: String(liveTrain.TrainNoLocal),
-                trainName: liveTrain.TrainName || edrTrain?.trainName || "Vlak",
-                classCode,
-                origin: relevantStops[0]?.nameForPerson || liveTrain.StartStation || "Výchozí",
-                destination: relevantStops[relevantStops.length - 1]?.nameForPerson || liveTrain.EndStation || "Cíl",
-                vehicles,
-                vehicleImage: getVehicleImagePath(vehicles) || getClassFallbackImage(classCode)
-            };
-        })
-        .sort((first, second) => {
-            const classCompare = first.classCode.localeCompare(second.classCode, "cs");
-            if (classCompare !== 0) return classCompare;
-            return first.trainNoLocal.localeCompare(second.trainNoLocal, "cs", { numeric: true });
-        });
+    const rows = (liveRows.length ? liveRows.map((liveTrain) => {
+        const edrTrain = cachedEDR.find((entry) => String(entry.trainNoLocal) === String(liveTrain.TrainNoLocal));
+        const relevantStops = getRelevantTimetable(edrTrain?.timetable || []);
+        const vehicles = parseVehicles(liveTrain.Vehicles);
+        const classCode = getTrainClassCode(liveTrain.TrainName);
+
+        return {
+            liveTrain,
+            edrTrain,
+            trainNoLocal: String(liveTrain.TrainNoLocal),
+            trainName: liveTrain.TrainName || edrTrain?.trainName || "Vlak",
+            classCode,
+            origin: relevantStops[0]?.nameForPerson || liveTrain.StartStation || "Výchozí",
+            destination: relevantStops[relevantStops.length - 1]?.nameForPerson || liveTrain.EndStation || "Cíl",
+            vehicles,
+            vehicleImage: getVehicleImagePath(vehicles) || getClassFallbackImage(classCode)
+        };
+    }) : cachedEDR.map((edrTrain) => {
+        const relevantStops = getRelevantTimetable(edrTrain?.timetable || []);
+        const classCode = getTrainClassCode(edrTrain?.trainName);
+        const vehicles = parseVehicles("");
+
+        return {
+            liveTrain: null,
+            edrTrain,
+            trainNoLocal: String(edrTrain?.trainNoLocal || ""),
+            trainName: edrTrain?.trainName || "Vlak",
+            classCode,
+            origin: relevantStops[0]?.nameForPerson || "Výchozí",
+            destination: relevantStops[relevantStops.length - 1]?.nameForPerson || "Cíl",
+            vehicles,
+            vehicleImage: getClassFallbackImage(classCode)
+        };
+    }))
+        .filter((item) => item.trainNoLocal);
+
+    return rows.sort((first, second) => {
+        const classCompare = first.classCode.localeCompare(second.classCode, "cs");
+        if (classCompare !== 0) return classCompare;
+        return first.trainNoLocal.localeCompare(second.trainNoLocal, "cs", { numeric: true });
+    });
 }
 
 function renderTrainGrid(items) {
